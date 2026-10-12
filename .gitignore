@@ -1,0 +1,6 @@
+# Dart tooling
+.dart_tool/
+.packages
+pubspec.lock
+
+# Generated code (*.g.dart) is committed: git dependencies cannot run build_runner.
