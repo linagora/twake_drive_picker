@@ -17,7 +17,7 @@ extension type _CozyBridgeJs(JSObject _) implements JSObject {
 
 /// Proxies requests through the cozy external bridge to the container app,
 /// which owns the stack session — so no token exchange is needed.
-abstract final class CozyBridge {
+abstract final class WebCozyBridge {
   /// Web reaches Drive only through the container app, never directly.
   static bool get isSupported => true;
 

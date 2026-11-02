@@ -1,4 +1,4 @@
-import 'package:twake_drive_picker/src/presentation/widget/html_iframe_widget.dart';
+import 'package:twake_drive_picker/src/platform/web/html_iframe_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
@@ -6,21 +6,21 @@ import 'package:universal_html/html.dart' as html;
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
-import 'package:twake_drive_picker/src/presentation/mixin/web_window_message_mixin.dart';
+import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
-class DriveIntentWebViewModal extends StatefulWidget {
+class WebDriveIntentWebViewModal extends StatefulWidget {
   final DriveIntentLoader intentLoader;
   final WorkplaceFilePickerConfigRequest filePickerConfig;
   final DriveIntentImageAssets imageAssets;
   final DriveIconButtonBuilder iconButtonBuilder;
   final WorkplaceLogger logger;
 
-  const DriveIntentWebViewModal({
+  const WebDriveIntentWebViewModal({
     super.key,
     required this.intentLoader,
     required this.filePickerConfig,
@@ -30,14 +30,14 @@ class DriveIntentWebViewModal extends StatefulWidget {
   });
 
   @override
-  State<DriveIntentWebViewModal> createState() =>
-      _DriveIntentWebViewModalState();
+  State<WebDriveIntentWebViewModal> createState() =>
+      _WebDriveIntentWebViewModalState();
 }
 
-class _DriveIntentWebViewModalState extends State<DriveIntentWebViewModal>
+class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
     with
         DriveIntentMessageHandlerMixin,
-        WebWindowMessageMixin<DriveIntentWebViewModal> {
+        WebWindowMessageMixin<WebDriveIntentWebViewModal> {
   html.IFrameElement? _iframeElement;
 
   @override
@@ -73,7 +73,12 @@ class _DriveIntentWebViewModalState extends State<DriveIntentWebViewModal>
     // The modal owns its listener: bound to its own lifetime, not the opener's
     // (a context menu tile pops its route on tap and would tear it down early).
     // Registered before the iframe can post its first ready message.
-    startWindowMessageListener(_forwardMessage);
+    // Only the modal's own iframe may speak: other frames and windows of the
+    // page can post to us with any origin they like.
+    startWindowMessageListener(
+      _forwardMessage,
+      expectedFrame: () => _iframeElement,
+    );
     startLoading(widget.intentLoader);
   }
 
@@ -157,8 +162,9 @@ class _DriveIntentWebViewModalState extends State<DriveIntentWebViewModal>
 
   @override
   Future<void> sendAck() async {
-    // data: URIs have opaque 'null' origin — postMessage requires '*' for those.
-    final targetOrigin = intentOrigin == 'null' ? '*' : intentOrigin;
+    // Never '*': the ack carries the picker config, so it only goes to the
+    // exact origin of the intent page.
+    final targetOrigin = intentOrigin;
     // dart:html's postMessage structured-clones the Map into a real JS
     // object, which is what Drive's getFilePickerConfig expects.
     _iframeElement?.contentWindow?.postMessage(

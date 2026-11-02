@@ -2,10 +2,10 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
-import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_shims.dart';
+import 'package:twake_drive_picker/src/platform/mobile/drive_intent_shims.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
-import 'package:twake_drive_picker/src/presentation/view/drive_intent_fake_page.dart';
+import 'package:twake_drive_picker/src/platform/mobile/drive_intent_fake_page.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
 import 'package:flutter/material.dart';
@@ -16,14 +16,14 @@ import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
-class DriveIntentWebViewModal extends StatefulWidget {
+class MobileDriveIntentWebViewModal extends StatefulWidget {
   final DriveIntentLoader intentLoader;
   final WorkplaceFilePickerConfigRequest filePickerConfig;
   final DriveIntentImageAssets imageAssets;
   final DriveIconButtonBuilder iconButtonBuilder;
   final WorkplaceLogger logger;
 
-  const DriveIntentWebViewModal({
+  const MobileDriveIntentWebViewModal({
     super.key,
     required this.intentLoader,
     required this.filePickerConfig,
@@ -33,11 +33,12 @@ class DriveIntentWebViewModal extends StatefulWidget {
   });
 
   @override
-  State<DriveIntentWebViewModal> createState() =>
-      _DriveIntentWebViewModalState();
+  State<MobileDriveIntentWebViewModal> createState() =>
+      _MobileDriveIntentWebViewModalState();
 }
 
-class _DriveIntentWebViewModalState extends State<DriveIntentWebViewModal>
+class _MobileDriveIntentWebViewModalState
+    extends State<MobileDriveIntentWebViewModal>
     with DriveIntentMessageHandlerMixin {
   @override
   WorkplaceLogger get workplaceLogger => widget.logger;

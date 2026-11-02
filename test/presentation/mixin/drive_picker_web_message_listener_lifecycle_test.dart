@@ -8,7 +8,7 @@ import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
-import 'package:twake_drive_picker/src/presentation/mixin/web_window_message_mixin.dart';
+import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
 import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
