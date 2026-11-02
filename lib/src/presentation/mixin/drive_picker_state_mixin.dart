@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/entity/workplace_theme.dart';
-import 'package:twake_drive_picker/src/l10n/drive_picker_localizations.dart';
+import 'package:twake_drive_picker/src/l10n/drive_picker_localizations_resolver.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_pick_state.dart';
@@ -69,7 +69,7 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
           failingMessage: null,
         );
       }
-      final l10n = DrivePickerLocalizations.of(context)!;
+      final l10n = resolveDrivePickerLocalizations(context);
       // Captured up front: the caller may pop this context (e.g. a context
       // menu tile) before the intent future settles, disposing this state.
       failingMessage = l10n.attachFromDriveFailingMessage;
