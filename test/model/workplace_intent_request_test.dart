@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/twake_workplace_protocol.dart';
+import 'package:twake_drive_picker/twake_drive_picker.dart';
 
 void main() {
   group('WorkplaceActionConfigRequest::toJson::', () {

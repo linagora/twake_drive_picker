@@ -3,11 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/domain/exceptions/workplace_exceptions.dart';
-import 'package:twake_workplace_protocol/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_origin_validator.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_pick_outcome.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
+import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 
 // Minimal widget harness — no WebView/iframe needed.
 class _TestWidget extends StatefulWidget {

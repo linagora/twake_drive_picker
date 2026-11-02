@@ -57,6 +57,7 @@ Map<String, dynamic> _$WorkplaceIntentDataRequestToJson(
 
 const _$WorkplaceDataRequestTypeEnumMap = {
   WorkplaceDataRequestType.intents: 'io.cozy.intents',
+  WorkplaceDataRequestType.permissions: 'io.cozy.permissions',
 };
 
 Map<String, dynamic> _$WorkplaceIntentRequestToJson(

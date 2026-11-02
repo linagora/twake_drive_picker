@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
 /// Static, non-interactive placeholder shown over the Drive intent
 /// webview/iframe while the real page is loading. Mirrors the Twake Drive

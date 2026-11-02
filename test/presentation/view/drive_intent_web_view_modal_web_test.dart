@@ -3,11 +3,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_enums.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_request.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_web_view_modal.dart';
+import 'package:twake_drive_picker/src/model/workplace_enums.dart';
+import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal.dart';
 
 const _imageAssets = DriveIntentImageAssets(
   driveLogo: 'assets/images/twake-drive-logo.svg',

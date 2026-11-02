@@ -1,15 +1,25 @@
-# twake-workplace-protocol
+# twake_drive_picker
 
 Flutter SDK for the Twake Workplace (Drive) file-picker intent
-(`PICK` on `io.cozy.files`), moved from the `workplace` package of Twake Mail so
-Twake Mail and Twake Chat share one implementation.
+(`PICK` on `io.cozy.files`) and the oversize-attachment upload, moved from the
+`workplace` package of Twake Mail so Twake Mail and Twake Chat share one
+implementation.
+
+Synced with [linagora/tmail-flutter](https://github.com/linagora/tmail-flutter)
+`workplace` at `e1210bf` (v0.41.0). The package stays standalone: it does not
+depend on Twake Mail's `core` package. Logging goes through `WorkplaceLogger`
+(`activeWorkplaceLogger`). Picker icon buttons go through
+`DriveIconButtonBuilder`.
 
 ## What it contains
 
 - `entity/`, `model/`, `message/`, `picker/`: protocol models, DTOs
   (`json_serializable`), the `postMessage` parser and the origin check.
-- `data/`: Cozy bridge (web and stub), Dio client, datasource, repository.
-- `domain/`: repository interface, interactors, states, exceptions.
+- `data/`: Cozy bridge (web and stub), Dio client, request executor, intent
+  datasource, Drive upload and share-link datasource, repository, access-mode
+  runner.
+- `domain/`: repository interface, intent and upload interactors, states,
+  exceptions.
 - `presentation/`: picker mixins, `DrivePickerSession`, the picker modal
   (web iframe, mobile webview), skeleton loader.
 - `l10n/`: picker strings (10 locales).
@@ -26,25 +36,24 @@ Twake Mail and Twake Chat share one implementation.
 
 ## Rules the `done` parser applies
 
-An entry is dropped when its id or name is blank, its size is negative or
-missing, it has no `sharingLink` and no `downloadLink`, or a link is not safe.
-Links must be `https`; pass `allowInsecureLinks: true` to also accept `http`.
-An unsafe thumbnail removes only the thumbnail. `onSkipped` receives the reason
-(never a link). A payload that is not a JSON object throws `FormatException`;
-a message of another intent, or a non-string `type`, is an unknown message.
+Same rules as Twake Mail. An entry is dropped when it is not a JSON object,
+its size is negative, or a `sharingLink` / `downloadLink` is present and is
+not `http` or `https`. A missing link is kept. An unsafe thumbnail does not
+drop the document. A payload that is not a JSON object throws. A message of
+another intent is an unknown message.
 
 ## Use
 
 ```yaml
 dependencies:
-  twake_workplace_protocol:
+  twake_drive_picker:
     git:
-      url: https://github.com/nqhhdev/twake-workplace-protocol.git
-      ref: v0.1.0
+      url: https://github.com/nqhhdev/twake_drive_picker.git
+      ref: v0.2.0
 ```
 
 ```dart
-import 'package:twake_workplace_protocol/twake_workplace_protocol.dart';
+import 'package:twake_drive_picker/twake_drive_picker.dart';
 
 final message = parseWorkplaceIntentMessage(intentId, raw);
 ```

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
 class DriveIntentWebViewModalShell extends StatelessWidget {
   final Widget child;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_skeleton_loader.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
 
 const _closeButtonKey = ValueKey('close-button');
 const _skeletonKey = ValueKey('desktop-skeleton');

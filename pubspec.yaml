@@ -1,6 +1,6 @@
-name: twake_workplace_protocol
+name: twake_drive_picker
 description: "Twake Workplace file picker SDK for Flutter: models, Cozy bridge, data layer, interactors and picker modal."
-version: 0.1.0
+version: 0.2.0
 publish_to: none
 
 environment:

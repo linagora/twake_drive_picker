@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/data/workplace_dio.dart';
+import 'package:twake_drive_picker/src/data/workplace_dio.dart';
 
 void main() {
   group('WorkplaceDio', () {

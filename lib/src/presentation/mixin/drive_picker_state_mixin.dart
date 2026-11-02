@@ -1,15 +1,15 @@
-import 'package:twake_workplace_protocol/src/logging/workplace_logger.dart';
+import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_request.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_theme.dart';
-import 'package:twake_workplace_protocol/src/l10n/workplace_localizations.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_pick_outcome.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_pick_state.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_picker_session.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_web_view_modal.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/entity/workplace_theme.dart';
+import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_pick_state.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_picker_session.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
 typedef OnPickDriveCallback = Future<void> Function(DrivePickState state);
 

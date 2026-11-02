@@ -16,3 +16,7 @@ class NoopWorkplaceLogger implements WorkplaceLogger {
   @override
   void error(String message, {Object? exception, StackTrace? stackTrace}) {}
 }
+
+/// Logger used by protocol code that upstream calls through `package:core`.
+/// The host app can replace it to forward lines into its own logger.
+WorkplaceLogger activeWorkplaceLogger = const NoopWorkplaceLogger();

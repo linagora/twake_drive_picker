@@ -1,20 +1,20 @@
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:twake_workplace_protocol/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
-import 'package:twake_workplace_protocol/src/presentation/mixin/drive_intent_shims.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_origin_validator.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_fake_page.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_skeleton_loader.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_web_view_modal_shell.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_shims.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_fake_page.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
 import 'package:flutter/material.dart';
-import 'package:twake_workplace_protocol/src/logging/workplace_logger.dart';
+import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_request.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/domain/exceptions/workplace_exceptions.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
 class DriveIntentWebViewModal extends StatefulWidget {
   final DriveIntentLoader intentLoader;

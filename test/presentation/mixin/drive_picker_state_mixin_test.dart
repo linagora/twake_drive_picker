@@ -2,16 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_enums.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_request.dart';
-import 'package:twake_workplace_protocol/src/entity/drive_document.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/l10n/workplace_localizations.dart';
-import 'package:twake_workplace_protocol/src/presentation/mixin/drive_picker_state_mixin.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_intent_image_assets.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_pick_outcome.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_pick_state.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_picker_session.dart';
+import 'package:twake_drive_picker/src/model/workplace_enums.dart';
+import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/entity/drive_document.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_pick_state.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_picker_session.dart';
 
 typedef _ModalStub = Future<DrivePickOutcome?> Function();
 

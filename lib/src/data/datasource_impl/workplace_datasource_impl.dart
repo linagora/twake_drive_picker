@@ -2,20 +2,23 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_exchange_token_response.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_exchange_token_request.dart';
-import 'package:twake_workplace_protocol/src/data/datasource/workplace_datasource.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_enums.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_request.dart';
-import 'package:twake_workplace_protocol/src/model/workplace_intent_response.dart';
-import 'package:twake_workplace_protocol/src/data/bridge/cozy_bridge.dart';
-import 'package:twake_workplace_protocol/src/data/workplace_dio.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent_access_mode.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent_config.dart';
+import 'package:twake_drive_picker/src/model/workplace_exchange_token_response.dart';
+import '../../model/workplace_exchange_token_request.dart';
+import '../datasource/workplace_datasource.dart';
+import '../../model/workplace_enums.dart';
+import '../../model/workplace_intent_request.dart';
+import '../../model/workplace_intent_response.dart';
+import '../workplace_dio.dart';
+import 'workplace_request_executor.dart';
+import '../../entity/workplace_intent.dart';
+import '../../entity/workplace_access_mode.dart';
+import '../../entity/workplace_intent_config.dart';
 
 class WorkplaceDataSourceImpl implements WorkplaceDataSource {
-  WorkplaceDataSourceImpl();
+  WorkplaceDataSourceImpl({WorkplaceRequestExecutor? executor})
+      : _executor = executor ?? const WorkplaceRequestExecutor();
+
+  final WorkplaceRequestExecutor _executor;
 
   Map<String, dynamic> _asJsonMap(dynamic data) {
     if (data is Map<String, dynamic>) return data;
@@ -28,61 +31,21 @@ class WorkplaceDataSourceImpl implements WorkplaceDataSource {
   @override
   Future<WorkplaceIntent> createIntent({
     required Uri platformUrl,
-    required WorkplaceIntentAccessMode accessMode,
+    required WorkplaceAccessMode accessMode,
     required WorkplaceIntentConfig config,
   }) async {
-    final body = _buildIntentRequest(config);
-
-    return switch (accessMode) {
-      BridgeAccessMode() => _createIntentViaBridge(body),
-      BearerTokenAccessMode(:final accessToken) => _createIntentViaBearerToken(
-        platformUrl,
-        accessToken,
-        body,
+    final data = await _executor.send(
+      context: WorkplaceRequestContext(
+        platformUrl: platformUrl,
+        accessMode: accessMode,
       ),
-    };
-  }
-
-  // No token: the container app already holds the stack session.
-  Future<WorkplaceIntent> _createIntentViaBridge(
-    Map<String, dynamic> body,
-  ) async {
-    final data = await CozyBridge.fetchJson(
-      method: 'POST',
-      path: '/intents',
-      body: body,
+      route: const WorkplaceRequestRoute(
+        method: 'POST',
+        pathSegments: ['intents'],
+      ),
+      body: WorkplaceRequestBody(data: _buildIntentRequest(config)),
     );
     return parseIntentResponse(data);
-  }
-
-  Future<WorkplaceIntent> _createIntentViaBearerToken(
-    Uri platformUrl,
-    String accessToken,
-    Map<String, dynamic> body,
-  ) async {
-    // Fail fast instead of sending a malformed Authorization header.
-    if (accessToken.trim().isEmpty) {
-      throw StateError('Access token is empty');
-    }
-    final response = await WorkplaceDio.instance.post(
-      platformUrl
-          .replace(
-            pathSegments: [
-              ...platformUrl.pathSegments.where(
-                (segment) => segment.isNotEmpty,
-              ),
-              'intents',
-            ],
-            queryParameters: {
-              ...platformUrl.queryParameters,
-              'force_session_id': 'true',
-            },
-          )
-          .toString(),
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
-      data: body,
-    );
-    return parseIntentResponse(response.data);
   }
 
   WorkplaceIntent parseIntentResponse(
@@ -110,50 +73,42 @@ class WorkplaceDataSourceImpl implements WorkplaceDataSource {
 
   Map<String, dynamic> _buildIntentRequest(WorkplaceIntentConfig config) =>
       WorkplaceIntentRequest(
-        data: WorkplaceIntentDataRequest(
-          type: WorkplaceDataRequestType.intents,
-          attributes: WorkplaceIntentAttributesRequest(
-            action: WorkplaceAction.pick,
-            type: WorkplaceDocType.files,
-            permissions: [WorkplacePermission.get],
-            data: WorkplaceFilePickerConfigRequest(
-              sharingLink: WorkplaceActionConfigRequest.fromEntity(
-                config.addAsLink,
-              ),
-              downloadLink: config.addAsAttachment == null
-                  ? null
-                  : WorkplaceActionConfigRequest.fromEntity(
-                      config.addAsAttachment!,
-                    ),
-              theme: WorkplaceThemeConfigRequest.fromEntity(config.theme),
-            ),
-          ),
+    data: WorkplaceIntentDataRequest(
+      type: WorkplaceDataRequestType.intents,
+      attributes: WorkplaceIntentAttributesRequest(
+        action: WorkplaceAction.pick,
+        type: WorkplaceDocType.files,
+        permissions: [WorkplacePermission.get],
+        data: WorkplaceFilePickerConfigRequest(
+          sharingLink: WorkplaceActionConfigRequest.fromEntity(config.addAsLink),
+          downloadLink: config.addAsAttachment == null
+              ? null
+              : WorkplaceActionConfigRequest.fromEntity(config.addAsAttachment!),
+          theme: WorkplaceThemeConfigRequest.fromEntity(config.theme),
         ),
-      ).toJson();
+      ),
+    ),
+  ).toJson();
 
   @override
   Future<String> exchangeToken(Uri platformUrl, String oidcIdToken) async {
     final response = await WorkplaceDio.instance.post(
-      platformUrl
-          .replace(
-            pathSegments: [
-              ...platformUrl.pathSegments.where(
-                (segment) => segment.isNotEmpty,
-              ),
-              'auth',
-              'token_exchange',
-            ],
-          )
-          .toString(),
-      options: Options(headers: {'Accept': 'application/json'}),
+      platformUrl.replace(
+        pathSegments: [
+          ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
+          'auth',
+          'token_exchange',
+        ],
+      ).toString(),
+      options: Options(
+        headers: {'Accept': 'application/json'},
+      ),
       data: WorkplaceExchangeTokenRequest(
         idToken: oidcIdToken,
         exchangeType: WorkplaceExchangeType.app,
       ).toJson(),
     );
-    final data = WorkplaceExchangeTokenResponse.fromJson(
-      _asJsonMap(response.data),
-    );
+    final data = WorkplaceExchangeTokenResponse.fromJson(_asJsonMap(response.data));
     final accessToken = data.accessToken;
     return accessToken;
   }

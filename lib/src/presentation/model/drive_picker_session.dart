@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:twake_workplace_protocol/src/presentation/mixin/drive_picker_state_mixin.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
 
 /// Bundles the inputs [DriveAttachmentPickerButton] and
 /// [DriveAttachmentContextMenuTile] both need to open the Drive picker, so

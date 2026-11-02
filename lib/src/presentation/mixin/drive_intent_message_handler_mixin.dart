@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:twake_workplace_protocol/src/logging/workplace_logger.dart';
+import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent.dart';
-import 'package:twake_workplace_protocol/src/domain/exceptions/workplace_exceptions.dart';
-import 'package:twake_workplace_protocol/src/message/workplace_intent_message.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_origin_validator.dart';
-import 'package:twake_workplace_protocol/src/picker/drive_pick_outcome.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
+import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
+import 'package:twake_drive_picker/src/message/workplace_intent_message.dart';
+import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 
 enum _Phase { waiting, loadingPage, interactive, closed }
 

@@ -4,12 +4,12 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/data/datasource_impl/workplace_datasource_impl.dart';
-import 'package:twake_workplace_protocol/src/data/workplace_dio.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_action_config.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent_access_mode.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_intent_config.dart';
-import 'package:twake_workplace_protocol/src/entity/workplace_theme.dart';
+import 'package:twake_drive_picker/src/data/datasource_impl/workplace_datasource_impl.dart';
+import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import 'package:twake_drive_picker/src/entity/workplace_action_config.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent_access_mode.dart';
+import 'package:twake_drive_picker/src/entity/workplace_intent_config.dart';
+import 'package:twake_drive_picker/src/entity/workplace_theme.dart';
 
 /// Captures the last request and returns a fixed JSON response.
 class _MockAdapter implements HttpClientAdapter {

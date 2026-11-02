@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:twake_workplace_protocol/src/presentation/mixin/web_window_message_mixin.dart';
+import 'package:twake_drive_picker/src/presentation/mixin/web_window_message_mixin.dart';
 
 class _MessageListenerWidget extends StatefulWidget {
   final void Function(String data, String? origin) onMessage;

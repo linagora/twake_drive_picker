@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:twake_workplace_protocol/src/presentation/model/drive_icon_button.dart';
-import 'package:twake_workplace_protocol/src/presentation/view/drive_intent_web_view_modal_shell.dart';
+import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
 
 const _closeIcon = 'assets/close.svg';
 

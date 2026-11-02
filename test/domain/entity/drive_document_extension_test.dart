@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:twake_workplace_protocol/src/entity/drive_document.dart';
-import 'package:twake_workplace_protocol/src/entity/drive_document_extension.dart';
-import 'package:twake_workplace_protocol/src/domain/exceptions/workplace_exceptions.dart';
+import 'package:twake_drive_picker/src/entity/drive_document.dart';
+import 'package:twake_drive_picker/src/entity/drive_document_extension.dart';
+import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
 
 void main() {
   DriveDocument makeDoc({

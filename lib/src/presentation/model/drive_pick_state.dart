@@ -1,7 +1,7 @@
-import 'package:twake_workplace_protocol/src/domain/state/workplace_state.dart';
+import 'package:twake_drive_picker/src/domain/state/workplace_state.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
-import 'package:twake_workplace_protocol/src/entity/drive_document.dart';
+import 'package:twake_drive_picker/src/entity/drive_document.dart';
 
 sealed class DrivePickState extends Equatable {}
 
