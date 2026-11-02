@@ -1,12 +1,12 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-import 'workplace_localizations.dart';
+import 'drive_picker_localizations.dart';
 
 // ignore_for_file: type=lint
 
 /// The translations for Russian (`ru`).
-class AppLocalizationsRu extends AppLocalizations {
-  AppLocalizationsRu([String locale = 'ru']) : super(locale);
+class DrivePickerLocalizationsRu extends DrivePickerLocalizations {
+  DrivePickerLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
   String get addAsLink => 'Добавить как ссылку';

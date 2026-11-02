@@ -1,12 +1,12 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-import 'workplace_localizations.dart';
+import 'drive_picker_localizations.dart';
 
 // ignore_for_file: type=lint
 
 /// The translations for French (`fr`).
-class AppLocalizationsFr extends AppLocalizations {
-  AppLocalizationsFr([String locale = 'fr']) : super(locale);
+class DrivePickerLocalizationsFr extends DrivePickerLocalizations {
+  DrivePickerLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
   String get addAsLink => 'Ajouter comme lien';

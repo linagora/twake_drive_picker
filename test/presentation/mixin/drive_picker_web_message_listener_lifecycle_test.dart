@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
-import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
+import 'package:twake_drive_picker/src/l10n/drive_picker_localizations.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
 import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
@@ -48,8 +48,8 @@ void _driveIframePosts(String type, {String origin = _origin}) {
 }
 
 Widget _app(Widget home) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: DrivePickerLocalizations.localizationsDelegates,
+  supportedLocales: DrivePickerLocalizations.supportedLocales,
   home: home,
 );
 

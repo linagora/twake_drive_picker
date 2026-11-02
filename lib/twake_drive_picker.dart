@@ -34,7 +34,7 @@ export 'src/entity/workplace_theme.dart';
 export 'src/entity/workplace_upload_file_spec.dart';
 export 'src/entity/workplace_upload_source.dart';
 export 'src/entity/workplace_upload_transfer.dart';
-export 'src/l10n/workplace_localizations.dart';
+export 'src/l10n/drive_picker_localizations.dart';
 export 'src/logging/workplace_logger.dart';
 export 'src/message/workplace_intent_message.dart';
 export 'src/model/workplace_enums.dart';

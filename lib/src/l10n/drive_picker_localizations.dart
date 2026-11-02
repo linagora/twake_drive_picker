@@ -5,31 +5,31 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
-import 'workplace_localizations_ar.dart';
-import 'workplace_localizations_de.dart';
-import 'workplace_localizations_en.dart';
-import 'workplace_localizations_fr.dart';
-import 'workplace_localizations_it.dart';
-import 'workplace_localizations_mn.dart';
-import 'workplace_localizations_pt.dart';
-import 'workplace_localizations_ru.dart';
-import 'workplace_localizations_vi.dart';
+import 'drive_picker_localizations_ar.dart';
+import 'drive_picker_localizations_de.dart';
+import 'drive_picker_localizations_en.dart';
+import 'drive_picker_localizations_fr.dart';
+import 'drive_picker_localizations_it.dart';
+import 'drive_picker_localizations_mn.dart';
+import 'drive_picker_localizations_pt.dart';
+import 'drive_picker_localizations_ru.dart';
+import 'drive_picker_localizations_vi.dart';
 
 // ignore_for_file: type=lint
 
-/// Callers can lookup localized strings with an instance of AppLocalizations
-/// returned by `AppLocalizations.of(context)`.
+/// Callers can lookup localized strings with an instance of DrivePickerLocalizations
+/// returned by `DrivePickerLocalizations.of(context)`.
 ///
-/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// Applications need to include `DrivePickerLocalizations.delegate()` in their app's
 /// `localizationDelegates` list, and the locales they support in the app's
 /// `supportedLocales` list. For example:
 ///
 /// ```dart
-/// import 'l10n/workplace_localizations.dart';
+/// import 'l10n/drive_picker_localizations.dart';
 ///
 /// return MaterialApp(
-///   localizationsDelegates: AppLocalizations.localizationsDelegates,
-///   supportedLocales: AppLocalizations.supportedLocales,
+///   localizationsDelegates: DrivePickerLocalizations.localizationsDelegates,
+///   supportedLocales: DrivePickerLocalizations.supportedLocales,
 ///   home: MyApplicationHome(),
 /// );
 /// ```
@@ -66,20 +66,23 @@ import 'workplace_localizations_vi.dart';
 /// Select and expand the newly-created Localizations item then, for each
 /// locale your application supports, add a new item and select the locale
 /// you wish to add from the pop-up menu in the Value field. This list should
-/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// be consistent with the languages listed in the DrivePickerLocalizations.supportedLocales
 /// property.
-abstract class AppLocalizations {
-  AppLocalizations(String locale)
+abstract class DrivePickerLocalizations {
+  DrivePickerLocalizations(String locale)
     : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
-  static AppLocalizations? of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static DrivePickerLocalizations? of(BuildContext context) {
+    return Localizations.of<DrivePickerLocalizations>(
+      context,
+      DrivePickerLocalizations,
+    );
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<DrivePickerLocalizations> delegate =
+      _DrivePickerLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -138,13 +141,15 @@ abstract class AppLocalizations {
   String get attachFromDrive;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
-  const _AppLocalizationsDelegate();
+class _DrivePickerLocalizationsDelegate
+    extends LocalizationsDelegate<DrivePickerLocalizations> {
+  const _DrivePickerLocalizationsDelegate();
 
   @override
-  Future<AppLocalizations> load(Locale locale) {
-    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  Future<DrivePickerLocalizations> load(Locale locale) {
+    return SynchronousFuture<DrivePickerLocalizations>(
+      lookupDrivePickerLocalizations(locale),
+    );
   }
 
   @override
@@ -161,17 +166,17 @@ class _AppLocalizationsDelegate
   ].contains(locale.languageCode);
 
   @override
-  bool shouldReload(_AppLocalizationsDelegate old) => false;
+  bool shouldReload(_DrivePickerLocalizationsDelegate old) => false;
 }
 
-AppLocalizations lookupAppLocalizations(Locale locale) {
+DrivePickerLocalizations lookupDrivePickerLocalizations(Locale locale) {
   // Lookup logic when language+country codes are specified.
   switch (locale.languageCode) {
     case 'pt':
       {
         switch (locale.countryCode) {
           case 'BR':
-            return AppLocalizationsPtBr();
+            return DrivePickerLocalizationsPtBr();
         }
         break;
       }
@@ -180,27 +185,27 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'ar':
-      return AppLocalizationsAr();
+      return DrivePickerLocalizationsAr();
     case 'de':
-      return AppLocalizationsDe();
+      return DrivePickerLocalizationsDe();
     case 'en':
-      return AppLocalizationsEn();
+      return DrivePickerLocalizationsEn();
     case 'fr':
-      return AppLocalizationsFr();
+      return DrivePickerLocalizationsFr();
     case 'it':
-      return AppLocalizationsIt();
+      return DrivePickerLocalizationsIt();
     case 'mn':
-      return AppLocalizationsMn();
+      return DrivePickerLocalizationsMn();
     case 'pt':
-      return AppLocalizationsPt();
+      return DrivePickerLocalizationsPt();
     case 'ru':
-      return AppLocalizationsRu();
+      return DrivePickerLocalizationsRu();
     case 'vi':
-      return AppLocalizationsVi();
+      return DrivePickerLocalizationsVi();
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'DrivePickerLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
     'that was used.',

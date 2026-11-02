@@ -1,12 +1,12 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-import 'workplace_localizations.dart';
+import 'drive_picker_localizations.dart';
 
 // ignore_for_file: type=lint
 
 /// The translations for German (`de`).
-class AppLocalizationsDe extends AppLocalizations {
-  AppLocalizationsDe([String locale = 'de']) : super(locale);
+class DrivePickerLocalizationsDe extends DrivePickerLocalizations {
+  DrivePickerLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
   String get addAsLink => 'Als Link hinzufügen';

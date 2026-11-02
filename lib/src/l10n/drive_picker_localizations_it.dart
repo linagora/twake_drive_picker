@@ -1,12 +1,12 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-import 'workplace_localizations.dart';
+import 'drive_picker_localizations.dart';
 
 // ignore_for_file: type=lint
 
 /// The translations for Italian (`it`).
-class AppLocalizationsIt extends AppLocalizations {
-  AppLocalizationsIt([String locale = 'it']) : super(locale);
+class DrivePickerLocalizationsIt extends DrivePickerLocalizations {
+  DrivePickerLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
   String get addAsLink => 'Aggiungi come collegamento';
