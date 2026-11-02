@@ -1,0 +1,14 @@
+twake_drive_picker
+Licensed under the GNU Affero General Public License v3.0 (see LICENSE).
+
+This package is derived from the `workplace` package of Twake Mail
+(https://github.com/linagora/tmail-flutter), also licensed under the GNU
+Affero General Public License v3.0. The original code remains the work of its
+authors and contributors; refer to the upstream repository for them. The
+upstream git history is not preserved here.
+
+It is used by Twake Chat and Twake Mail to let users pick files from Twake
+Drive (the `PICK` intent on `io.cozy.files`).
+
+Third-party dependencies keep their own licenses; see each package's
+license file.

@@ -43,8 +43,9 @@ class _TestState extends State<_TestWidget>
   @override
   Future<void> loadIntent(WorkplaceIntent intent) {
     if (throwOnLoad) throw StateError('load intent failed');
-    if (failLoadAsync)
+    if (failLoadAsync) {
       return Future.error(StateError('load intent failed async'));
+    }
     loadCalls.add(intent);
     return Future.value();
   }

@@ -62,8 +62,8 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Single Sentry funnel for every failure path: reports the failing stage
-  /// with the original exception and stack, then closes the modal.
+  /// Single funnel for every failure path: logs the failing stage with the
+  /// original exception and stack, then closes the modal.
   void _failWith(String stage, Object error, [StackTrace? stackTrace]) {
     workplaceLogger.error(
       'driveIntent: $stage',

@@ -1,8 +1,6 @@
 @TestOn('chrome')
 library;
 
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
 import 'package:universal_html/html.dart' as html;

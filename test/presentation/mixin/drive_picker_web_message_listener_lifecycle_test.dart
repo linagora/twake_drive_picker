@@ -16,7 +16,7 @@ import 'package:twake_drive_picker/src/presentation/model/drive_picker_session.d
 
 // Exercises the real `window.postMessage` transport (other tests call
 // onMessage directly). Contract: the modal owns its listener for its own
-// lifetime and must not depend on the opener's — the context-menu tile pops
+// lifetime and must not depend on the opener's — a menu tile pops
 // its route on tap and disposes before the handshake arrives.
 //
 // universal_html gives the VM an in-memory DOM, so dispatchEvent reaches
@@ -274,12 +274,12 @@ void _modalOwnsListenerTests() {
 }
 
 // ---------------------------------------------------------------------------
-// Group C — end-to-end via the attachment context menu. This is the
+// Group C — end-to-end via a menu tile. This is the
 // regression: the tile pops its own route on tap, so if the modal ever leaned
 // on the tile's listener the handshake would be lost and the pick would fail.
 // ---------------------------------------------------------------------------
 
-/// Same shape as the real context-menu tile state: pops its own route in
+/// Same shape as a menu tile state: pops its own route in
 /// onTap, then opens the picker modal.
 class _MenuTileUnderTest extends StatefulWidget {
   const _MenuTileUnderTest();

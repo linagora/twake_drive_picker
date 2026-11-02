@@ -1,4 +1,6 @@
 @TestOn('chrome')
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -32,50 +34,49 @@ Widget _modal(Future<WorkplaceIntent> intent) {
 }
 
 void main() {
-  testWidgets(
-    'preserves the iframe platform view in both resize directions (#4738)',
-    (tester) async {
-      // The intent never resolves: the modal stays in its loading phase, which
-      // is exactly the window #4738 regresses in. The iframe lives in the shell
-      // regardless of the skeleton, so it is mounted throughout.
-      final intent = Completer<WorkplaceIntent>();
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(1280, 800);
+  testWidgets('preserves the iframe platform view in both resize directions', (
+    tester,
+  ) async {
+    // The intent never resolves: the modal stays in its loading phase, which
+    // is the window where a remount used to happen. The iframe lives in the shell
+    // regardless of the skeleton, so it is mounted throughout.
+    final intent = Completer<WorkplaceIntent>();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 800);
 
-      await tester.pumpWidget(_modal(intent.future));
-      await tester.pump();
+    await tester.pumpWidget(_modal(intent.future));
+    await tester.pump();
 
-      // The flutter_test web embedder does not attach the real <iframe> to the
-      // live DOM, so recreation is asserted at the framework level: a stable
-      // HtmlElementView Element means the platform view — and its iframe — was
-      // never torn down. findsOneWidget additionally rules out an orphaned view
-      // leaking alongside a fresh one.
-      final platformView = find.byType(HtmlElementView);
-      expect(platformView, findsOneWidget);
-      final platformViewElement = tester.element(platformView);
+    // The flutter_test web embedder does not attach the real <iframe> to the
+    // live DOM, so recreation is asserted at the framework level: a stable
+    // HtmlElementView Element means the platform view — and its iframe — was
+    // never torn down. findsOneWidget additionally rules out an orphaned view
+    // leaking alongside a fresh one.
+    final platformView = find.byType(HtmlElementView);
+    expect(platformView, findsOneWidget);
+    final platformViewElement = tester.element(platformView);
 
-      // Desktop -> mobile crosses the responsive breakpoint (1280 >= 1200 desktop,
-      // 375 < 900 mobile), the transition that used to remount the iframe.
-      tester.view.physicalSize = const Size(375, 800);
-      await tester.pump();
-      expect(platformView, findsOneWidget);
-      expect(
-        identical(platformViewElement, tester.element(platformView)),
-        isTrue,
-      );
+    // Desktop -> mobile crosses the responsive breakpoint (1280 >= 1200 desktop,
+    // 375 < 900 mobile), the transition that used to remount the iframe.
+    tester.view.physicalSize = const Size(375, 800);
+    await tester.pump();
+    expect(platformView, findsOneWidget);
+    expect(
+      identical(platformViewElement, tester.element(platformView)),
+      isTrue,
+    );
 
-      // Mobile -> desktop: the reverse transition must be just as stable.
-      tester.view.physicalSize = const Size(1280, 800);
-      await tester.pump();
-      expect(platformView, findsOneWidget);
-      expect(
-        identical(platformViewElement, tester.element(platformView)),
-        isTrue,
-      );
-    },
-  );
+    // Mobile -> desktop: the reverse transition must be just as stable.
+    tester.view.physicalSize = const Size(1280, 800);
+    await tester.pump();
+    expect(platformView, findsOneWidget);
+    expect(
+      identical(platformViewElement, tester.element(platformView)),
+      isTrue,
+    );
+  });
 }

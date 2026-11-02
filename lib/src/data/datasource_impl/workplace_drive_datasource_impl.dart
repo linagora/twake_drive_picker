@@ -45,8 +45,9 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
       try {
         return await _uploadOnce(context, name, spec, requestTransfer);
       } on DioException catch (exception) {
-        if (exception.type == DioExceptionType.cancel)
+        if (exception.type == DioExceptionType.cancel) {
           throw WorkplaceUploadCancelledException();
+        }
         // The stack already holds a file by that name; retry with the next suffix.
         if (exception.response?.statusCode != 409 || isLast) rethrow;
       }

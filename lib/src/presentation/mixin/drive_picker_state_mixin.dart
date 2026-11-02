@@ -85,8 +85,8 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
             : WorkplaceActionConfigRequest(
                 label: addAsAttachmentTitle,
                 maxFileSize: snapshot.maxAttachmentSizeBytes,
-                // What is left after the composer's existing attachments, so
-                // the picker can't offer bytes the send guard would reject.
+                // What is left of the host's attachment budget, so the picker
+                // can't offer bytes the host would reject.
                 availableSize:
                     snapshot.remainingAttachmentCapacityBytes ??
                     snapshot.maxAttachmentSizeBytes,
@@ -155,8 +155,8 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
       case DrivePickOutcomePicked(:final documents):
         await _dispatch(DrivePickResult(documents));
       case DrivePickOutcomeFailed(:final error):
-        // Already reported to Sentry at the failing stage (modal mixin or the
-        // catch above) — only dispatch the UI failure callback here.
+        // Already logged at the failing stage (modal mixin or the catch
+        // above) — only dispatch the UI failure callback here.
         await _dispatch(DrivePickFailure(error, message: failingMessage));
       case DrivePickOutcomeCancelled():
       case null:

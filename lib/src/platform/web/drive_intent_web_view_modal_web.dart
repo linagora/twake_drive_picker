@@ -71,8 +71,8 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
   void initState() {
     super.initState();
     // The modal owns its listener: bound to its own lifetime, not the opener's
-    // (a context menu tile pops its route on tap and would tear it down early).
-    // Registered before the iframe can post its first ready message.
+    // (the opener may pop its route on tap and be disposed early). Registered
+    // before the iframe can post its first ready message.
     // Only the modal's own iframe may speak: other frames and windows of the
     // page can post to us with any origin they like.
     startWindowMessageListener(
@@ -143,7 +143,7 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
         },
       ),
     );
-    // Keep the iframe ancestry stable across resize (#4738).
+    // Keep the iframe ancestry stable across resize: remounting it reloads Drive.
     return Stack(
       children: [
         Positioned.fill(

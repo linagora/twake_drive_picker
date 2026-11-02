@@ -59,8 +59,9 @@ class WorkplaceAccessModeRunner {
     final oidcToken = _oidcTokenGetter();
     if (oidcToken == null) throw StateError('OIDC token is unavailable');
     final accessToken = await _exchangeAccessToken(platformUrl, oidcToken);
-    if (accessToken == null)
+    if (accessToken == null) {
       throw StateError('Drive access token exchange failed');
+    }
     return workplaceCall(BearerTokenAccessMode(accessToken));
   }
 
@@ -132,7 +133,6 @@ class WorkplaceAccessModeRunner {
     }
 
     final refreshedToken = await _oidcRefreshTrigger();
-    // Trace level: rides into Sentry as a breadcrumb on _failWith.
     logTrace(
       'WorkplaceAccessModeRunner::_triggerRefreshOIDCToken',
       extras: {
