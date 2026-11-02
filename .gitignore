@@ -4,3 +4,9 @@
 pubspec.lock
 
 # Generated code (*.g.dart) is committed: git dependencies cannot run build_runner.
+build/
+.flutter-plugins-dependencies
+.idea/
+.DS_Store
+*.iml
+.vscode/

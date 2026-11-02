@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_workplace_protocol/twake_workplace_protocol.dart';
 
 WorkplaceIntentDoneMessage _parseDone(
