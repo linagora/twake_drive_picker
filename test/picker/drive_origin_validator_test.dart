@@ -48,14 +48,21 @@ void main() {
       },
     );
 
-    test('data: URI intent (intentOrigin "null") accepts "*"', () {
+    test('data: URI intent (intentOrigin "null") rejects "*"', () {
       expect(
         validator.isValid('*', intentOrigin: 'null', intentClient: null),
-        isTrue,
+        isFalse,
       );
     });
 
-    test('"*" rejected when intentOrigin is not "null"', () {
+    test('opaque "null" origin never matches, even against "null"', () {
+      expect(
+        validator.isValid('null', intentOrigin: 'null', intentClient: null),
+        isFalse,
+      );
+    });
+
+    test('"*" rejected for an https intent', () {
       expect(
         validator.isValid('*', intentOrigin: _origin, intentClient: null),
         isFalse,
@@ -84,14 +91,14 @@ void main() {
       );
     });
 
-    test('origin matches intentClient (not intentOrigin) → true', () {
+    test('origin matches intentClient (not intentOrigin) → false', () {
       expect(
         validator.isValid(
           _client,
           intentOrigin: _origin,
           intentClient: _client,
         ),
-        isTrue,
+        isFalse,
       );
     });
 
@@ -117,10 +124,10 @@ void main() {
       );
     });
 
-    test('data: URI intent (intentOrigin "null") accepts "*"', () {
+    test('data: URI intent (intentOrigin "null") rejects "*"', () {
       expect(
         validator.isValid('*', intentOrigin: 'null', intentClient: null),
-        isTrue,
+        isFalse,
       );
     });
 
@@ -140,20 +147,22 @@ void main() {
         isFalse,
       );
     });
+  });
 
-    test(
-      'valid non-wildcard intentClient still matches (unchanged behavior)',
-      () {
-        expect(
-          validator.isValid(
-            _client,
-            intentOrigin: _origin,
-            intentClient: _client,
-          ),
-          isTrue,
-        );
-      },
-    );
+  group('tryGetUriOrigin', () {
+    test('returns scheme, host and port of an http(s) url', () {
+      expect(
+        tryGetUriOrigin(Uri.parse('https://drive.example.com:8443/pick?a=1')),
+        'https://drive.example.com:8443',
+      );
+    });
+
+    test('returns null instead of throwing for urls without an origin', () {
+      expect(tryGetUriOrigin(Uri.parse('data:text/html,hi')), isNull);
+      expect(tryGetUriOrigin(Uri.parse('file:///etc/hosts')), isNull);
+      expect(tryGetUriOrigin(Uri.parse('/relative/path')), isNull);
+      expect(tryGetUriOrigin(Uri.parse('https:///no-host')), isNull);
+    });
   });
 
   group('isValidDriveClient', () {

@@ -16,7 +16,7 @@ typedef DriveIntentLoader = Future<WorkplaceIntent> Function();
 /// Shared loading/messaging lifecycle for the mobile and web Drive picker modals.
 mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
   late String _intentId;
-  String _intentOrigin = 'null';
+  String _intentOrigin = '';
   String? _intentClient;
   Timer? _readyTimeoutTimer;
 
@@ -100,10 +100,18 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
   void _tryApplyIntent() {
     if (!_canApplyIntent) return;
     final intent = _resolvedIntent!;
+    final origin = tryGetUriOrigin(intent.intentUrl);
+    if (origin == null) {
+      // data:, file: or host-less URLs have no origin to validate messages
+      // against; refuse them instead of accepting anything.
+      _failWith(
+        'intent url has no http(s) origin',
+        DriveIntentPageLoadException('intent url is not an http(s) url'),
+      );
+      return;
+    }
     _intentId = intent.intentId;
-    _intentOrigin = intent.intentUrl.scheme == 'data'
-        ? 'null'
-        : intent.intentUrl.origin;
+    _intentOrigin = origin;
     _intentClient = intent.client;
     _setPhase(_Phase.loadingPage);
     unawaited(_applyIntent(intent));
@@ -151,15 +159,18 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     if (!_acceptsMessages) return;
     if (!_isValidOrigin(origin)) {
       workplaceLogger.log(
-        'driveIntent: dropped message from unexpected origin: $origin',
+        'driveIntent: dropped message from unexpected origin',
       );
       return;
     }
     final WorkplaceIntentMessage msg;
     try {
       msg = WorkplaceIntentMessage.parse(_intentId, raw);
-    } catch (_) {
-      workplaceLogger.log('driveIntent: failed to parse message: $raw');
+    } catch (e) {
+      // Never log [raw]: it is page-controlled and may carry file metadata.
+      workplaceLogger.log(
+        'driveIntent: failed to parse message (${e.runtimeType})',
+      );
       return;
     }
     unawaited(_dispatchWorkplaceMessage(msg));
@@ -195,10 +206,12 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
         _setPhase(_Phase.interactive);
         break;
       case WorkplaceIntentDoneMessage():
+        // Counts only: ids, names and sizes are user data.
         workplaceLogger.log(
-          'driveIntent: done received, docs: ${msg.documents.map((d) => '{id:${d.id}, name:${d.name}, size:${d.size}, mimeType:${d.mimeType}').join(', ')}',
+          'driveIntent: done received, ${msg.documents.length} document(s) '
+          'accepted, ${msg.skippedCount} skipped',
         );
-        _finish(DrivePickOutcomePicked(msg.documents));
+        _finish(_outcomeOfDone(msg));
         break;
       case WorkplaceIntentErrorMessage():
         _failWith('drive page reported error', DriveIntentErrorException());
@@ -208,11 +221,17 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
         _finish(const DrivePickOutcomeCancelled());
         break;
       case WorkplaceIntentUnknownMessage():
-        workplaceLogger.log(
-          'driveIntent: unknown message type ${msg.type}, discarded',
-        );
+        workplaceLogger.log('driveIntent: unknown message type discarded');
         break;
     }
+  }
+
+  /// A `done` that yields no usable document is never a successful pick:
+  /// nothing selected is a cancel, everything rejected is a failure.
+  DrivePickOutcome _outcomeOfDone(WorkplaceIntentDoneMessage msg) {
+    if (msg.documents.isNotEmpty) return DrivePickOutcomePicked(msg.documents);
+    if (msg.skippedCount == 0) return const DrivePickOutcomeCancelled();
+    return DrivePickOutcomeFailed(DriveIntentNoValidDocumentException());
   }
 
   void cancel() => _finish(const DrivePickOutcomeCancelled());

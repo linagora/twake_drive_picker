@@ -1,22 +1,26 @@
 abstract final class DriveIntentShims {
   static const String handlerName = 'driveIntentMessage';
 
-  // The shim forwards `targetOrigin` (the value the page chose to pass to
-  // postMessage) as the second arg to the Flutter handler. This is intentional:
-  // mobile WebViews have no browser-stamped origin, so we use targetOrigin as a
-  // best-effort hint. On web, `event.origin` is browser-stamped and trustworthy;
-  // on mobile the origin check is inherently weaker because the page controls
-  // the targetOrigin value. Mitigation: we only open URLs from trusted sources.
+  /// Makes the Drive page's `window.parent.postMessage(data, ...)` reach the
+  /// Flutter handler.
+  ///
+  /// Only the payload is forwarded. The `targetOrigin` the page passes is
+  /// page-controlled and therefore worthless as a sender identity: the origin
+  /// is read natively from the WebView instead (see `MobileMessageGate`).
+  /// Sub-frames are left alone, so a frame embedded by the page does not get
+  /// the fake parent.
   static String get parentPostMessageShim =>
       '''
-    window.parent = {
-      postMessage: function(data, targetOrigin) {
-        window.flutter_inappwebview.callHandler(
-          '$handlerName',
-          typeof data === 'string' ? data : JSON.stringify(data),
-          targetOrigin
-        );
-      }
-    };
+    (function() {
+      if (window.self !== window.top) return;
+      window.parent = {
+        postMessage: function(data) {
+          window.flutter_inappwebview.callHandler(
+            '$handlerName',
+            typeof data === 'string' ? data : JSON.stringify(data)
+          );
+        }
+      };
+    })();
     ''';
 }

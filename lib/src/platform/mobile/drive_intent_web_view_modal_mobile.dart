@@ -5,7 +5,7 @@ import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_h
 import 'package:twake_drive_picker/src/platform/mobile/drive_intent_shims.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
-import 'package:twake_drive_picker/src/platform/mobile/drive_intent_fake_page.dart';
+import 'package:twake_drive_picker/src/platform/mobile/mobile_message_gate.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
 import 'package:flutter/material.dart';
@@ -57,11 +57,6 @@ class _MobileDriveIntentWebViewModalState
 
   @override
   Future<void> loadIntent(WorkplaceIntent intent) {
-    if (intent.intentUrl.scheme == 'data') {
-      return _webViewController!.loadData(
-        data: DriveIntentFakePage.buildHtml(intent.intentId),
-      );
-    }
     return _webViewController!.loadUrl(
       urlRequest: URLRequest(url: WebUri.uri(intent.intentUrl)),
     );
@@ -95,6 +90,25 @@ class _MobileDriveIntentWebViewModalState
     );
   }
 
+  // The page can only be reached at the intent origin: a redirect, a link or
+  // a script navigating elsewhere would let foreign content talk to the picker
+  // through the same JS handler.
+  Future<NavigationActionPolicy> _handleNavigation(
+    InAppWebViewController controller,
+    NavigationAction action,
+  ) async {
+    final allowed = isNavigationToIntentOriginAllowed(
+      action.request.url?.uriValue,
+      intentOrigin: intentOrigin,
+    );
+    if (!allowed) {
+      workplaceLogger.log('driveIntent: blocked navigation to a foreign url');
+    }
+    return allowed
+        ? NavigationActionPolicy.ALLOW
+        : NavigationActionPolicy.CANCEL;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -121,24 +135,29 @@ class _MobileDriveIntentWebViewModalState
             : null,
         child: InAppWebView(
           key: const ValueKey('drive-intent-webview'),
-          initialSettings: InAppWebViewSettings(),
+          initialSettings: InAppWebViewSettings(
+            useShouldOverrideUrlLoading: true,
+          ),
           initialUserScripts: UnmodifiableListView([
             UserScript(
               source: DriveIntentShims.parentPostMessageShim,
               injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+              forMainFrameOnly: true,
             ),
           ]),
           onWebViewCreated: (controller) {
             _webViewController = controller;
+            final gate = MobileMessageGate(
+              currentUrl: () async => (await controller.getUrl())?.uriValue,
+              onMessage: onMessage,
+            );
             controller.addJavaScriptHandler(
               handlerName: DriveIntentShims.handlerName,
-              callback: (args) => onMessage(
-                raw: args[0] as String,
-                origin: args.length > 1 ? args[1] as String? : null,
-              ),
+              callback: gate.handle,
             );
             notifyPlatformViewReady();
           },
+          shouldOverrideUrlLoading: _handleNavigation,
           onReceivedError: _handleLoadError,
           onReceivedHttpError: _handleHttpError,
         ),

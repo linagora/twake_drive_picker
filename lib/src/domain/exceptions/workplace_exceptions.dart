@@ -15,6 +15,10 @@ class DriveIntentPageLoadException implements Exception {
 
 class DriveIntentTimeoutException implements Exception {}
 
+/// Drive reported a pick, but every document was rejected (malformed,
+/// negative size or non-http(s) link).
+class DriveIntentNoValidDocumentException implements Exception {}
+
 class WorkplaceNoIntentClientException implements Exception {}
 
 /// The caller cancelled the Drive upload; no share link is returned.
