@@ -15,7 +15,7 @@ import '../../domain/exceptions/workplace_exceptions.dart';
 /// Writes a file to the Mail magic folder and mints its public share link.
 class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
   WorkplaceDriveDataSourceImpl({WorkplaceRequestExecutor? executor})
-    : _executor = executor ?? const WorkplaceRequestExecutor();
+    : _executor = executor ?? WorkplaceRequestExecutor();
 
   /// Numbered names tried before a unique one; each attempt re-sends the body.
   static const _maxNumberedAttempts = 10;

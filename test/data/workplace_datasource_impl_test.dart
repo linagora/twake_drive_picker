@@ -1,11 +1,13 @@
+import 'dart:typed_data';
+
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_datasource_impl.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import 'package:twake_drive_picker/src/data/workplace_config.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_action_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_access_mode.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_config.dart';
@@ -57,7 +59,7 @@ void main() {
   late WorkplaceDataSourceImpl datasource;
 
   setUp(() {
-    datasource = WorkplaceDataSourceImpl();
+    datasource = WorkplaceDataSourceImpl(config: testConfig);
   });
 
   Map<String, dynamic> buildResponse({
@@ -155,29 +157,36 @@ void main() {
       expect(result.intentUrl.scheme, equals('http'));
     });
 
-    test('Should use kReleaseMode as default for requireHttps', () {
-      // In debug/test mode, kReleaseMode is false so http URLs are accepted
-      if (kReleaseMode) {
-        expect(
-          () => datasource.parseIntentResponse(
-            buildResponse(
-              id: 'intent-1',
-              href: 'http://drive.example.com/pick',
-            ),
-          ),
-          throwsA(isA<ArgumentError>()),
-        );
-      } else {
-        expect(
-          datasource.parseIntentResponse(
-            buildResponse(
-              id: 'intent-1',
-              href: 'http://drive.example.com/pick',
-            ),
-          ),
-          isNotNull,
-        );
-      }
+    test('Should take requireHttps from the injected config', () {
+      final httpResponse = buildResponse(
+        id: 'intent-1',
+        href: 'http://drive.example.com/pick',
+      );
+      final strict = WorkplaceDataSourceImpl(
+        config: WorkplaceConfig(dio: testDio, requireHttps: true),
+      );
+      final lenient = WorkplaceDataSourceImpl(
+        config: WorkplaceConfig(dio: testDio, requireHttps: false),
+      );
+
+      expect(
+        () => strict.parseIntentResponse(httpResponse),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(lenient.parseIntentResponse(httpResponse), isNotNull);
+    });
+
+    test('Should let a per-call requireHttps override the config', () {
+      final strict = WorkplaceDataSourceImpl(
+        config: WorkplaceConfig(dio: testDio, requireHttps: true),
+      );
+
+      final result = strict.parseIntentResponse(
+        buildResponse(id: 'intent-1', href: 'http://drive.example.com/pick'),
+        requireHttps: false,
+      );
+
+      expect(result.intentUrl.scheme, 'http');
     });
 
     test('Should parse client from attributes when present', () {
@@ -242,8 +251,6 @@ void main() {
   });
 
   group('WorkplaceDataSourceImpl::createIntent::', () {
-    late Dio originalDio;
-
     final intentResponse = {
       'data': {
         'id': 'intent-abc',
@@ -258,17 +265,13 @@ void main() {
       },
     };
 
-    setUp(() {
-      originalDio = WorkplaceDio.instance;
-    });
+    setUp(() {});
 
-    tearDown(() {
-      WorkplaceDio.setInstance(originalDio);
-    });
+    tearDown(() {});
 
     test('Should return WorkplaceIntent with correct id and url', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       final result = await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com'),
@@ -289,7 +292,7 @@ void main() {
 
     test('Should append /intents to platform URL', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com/api/'),
@@ -306,7 +309,7 @@ void main() {
 
     test('Should include force_session_id=true query parameter', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com'),
@@ -326,7 +329,7 @@ void main() {
 
     test('Should send Authorization Bearer header', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com'),
@@ -346,7 +349,7 @@ void main() {
 
     test('Should send correct POST body fields for intent creation', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com'),
@@ -381,7 +384,7 @@ void main() {
 
     test('Should serialize attachment size limits in intent request', () async {
       final adapter = _MockAdapter(intentResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.createIntent(
         platformUrl: Uri.parse('https://platform.example.com'),
@@ -415,7 +418,7 @@ void main() {
       'Should send explicit null downloadLink to hide the attachment button when addAsAttachment is omitted',
       () async {
         final adapter = _MockAdapter(intentResponse);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         await datasource.createIntent(
           platformUrl: Uri.parse('https://platform.example.com'),
@@ -440,7 +443,7 @@ void main() {
     );
 
     test('Should propagate DioException on network error', () async {
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = _ErrorAdapter());
+      testDio.httpClientAdapter = _ErrorAdapter();
 
       expect(
         () => datasource.createIntent(
@@ -460,7 +463,7 @@ void main() {
       'Should reject an empty bearer access token without contacting WorkplaceDio',
       () async {
         final adapter = _MockAdapter(intentResponse);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         expect(
           () => datasource.createIntent(
@@ -478,9 +481,7 @@ void main() {
     );
 
     test('Should reject a whitespace-only bearer access token', () async {
-      WorkplaceDio.setInstance(
-        Dio()..httpClientAdapter = _MockAdapter(intentResponse),
-      );
+      testDio.httpClientAdapter = _MockAdapter(intentResponse);
 
       expect(
         () => datasource.createIntent(
@@ -497,22 +498,14 @@ void main() {
   });
 
   group('WorkplaceDataSourceImpl::exchangeToken::', () {
-    late Dio originalDio;
-
     final tokenResponse = {'access_token': 'exchange-token-xyz'};
 
-    setUp(() {
-      originalDio = WorkplaceDio.instance;
-    });
+    setUp(() {});
 
-    tearDown(() {
-      WorkplaceDio.setInstance(originalDio);
-    });
+    tearDown(() {});
 
     test('Should return access token string on success', () async {
-      WorkplaceDio.setInstance(
-        Dio()..httpClientAdapter = _MockAdapter(tokenResponse),
-      );
+      testDio.httpClientAdapter = _MockAdapter(tokenResponse);
 
       final result = await datasource.exchangeToken(
         Uri.parse('https://platform.example.com'),
@@ -524,7 +517,7 @@ void main() {
 
     test('Should append /auth/token_exchange to platform URL', () async {
       final adapter = _MockAdapter(tokenResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.exchangeToken(
         Uri.parse('https://platform.example.com/api/'),
@@ -538,7 +531,7 @@ void main() {
 
     test('Should send correct POST body fields for token exchange', () async {
       final adapter = _MockAdapter(tokenResponse);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.exchangeToken(
         Uri.parse('https://platform.example.com'),
@@ -553,7 +546,7 @@ void main() {
     });
 
     test('Should propagate DioException on network error', () async {
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = _ErrorAdapter());
+      testDio.httpClientAdapter = _ErrorAdapter();
 
       expect(
         () => datasource.exchangeToken(

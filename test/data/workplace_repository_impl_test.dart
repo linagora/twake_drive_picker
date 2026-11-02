@@ -9,6 +9,8 @@ import 'package:twake_drive_picker/src/entity/workplace_upload_file_spec.dart';
 import 'package:twake_drive_picker/src/entity/workplace_upload_source.dart';
 import 'package:twake_drive_picker/src/entity/workplace_upload_transfer.dart';
 
+import '../test_utils/test_workplace_config.dart';
+
 class _StubUploadSource implements WorkplaceUploadSource {
   const _StubUploadSource();
 
@@ -65,7 +67,7 @@ void main() {
         );
 
         final result = await WorkplaceRepositoryImpl(
-          WorkplaceDataSourceImpl(),
+          WorkplaceDataSourceImpl(config: testConfig),
           dataSource,
         ).uploadFile(context: context, spec: spec, transfer: transfer);
 

@@ -4,7 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_executor.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import 'package:twake_drive_picker/src/data/workplace_config.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 
 /// Captures the last request and returns an empty JSON object.
@@ -32,8 +33,7 @@ class _CaptureAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  const executor = WorkplaceRequestExecutor();
-  late Dio originalDio;
+  final executor = WorkplaceRequestExecutor(config: testConfig);
   late _CaptureAdapter adapter;
 
   WorkplaceRequestContext bearer(String token) => WorkplaceRequestContext(
@@ -42,12 +42,9 @@ void main() {
   );
 
   setUp(() {
-    originalDio = WorkplaceDio.instance;
     adapter = _CaptureAdapter();
-    WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    testDio.httpClientAdapter = adapter;
   });
-
-  tearDown(() => WorkplaceDio.setInstance(originalDio));
 
   group('WorkplaceRequestExecutor::bearer::', () {
     test(
@@ -132,32 +129,29 @@ void main() {
       expect(options.receiveTimeout, equals(timeout));
     });
 
-    test(
-      'keeps the WorkplaceDio timeouts when the transfer sets none',
-      () async {
-        const defaultTimeout = Duration(seconds: 10);
-        WorkplaceDio.setInstance(
-          Dio(
-            BaseOptions(
-              sendTimeout: defaultTimeout,
-              receiveTimeout: defaultTimeout,
-            ),
-          )..httpClientAdapter = adapter,
-        );
+    test('keeps the config Dio timeouts when the transfer sets none', () async {
+      const defaultTimeout = Duration(seconds: 10);
+      final dio = Dio(
+        BaseOptions(
+          sendTimeout: defaultTimeout,
+          receiveTimeout: defaultTimeout,
+        ),
+      )..httpClientAdapter = adapter;
 
-        await executor.send(
-          context: bearer('tok'),
-          route: const WorkplaceRequestRoute(
-            method: 'GET',
-            pathSegments: ['apps'],
-          ),
-        );
+      await WorkplaceRequestExecutor(
+        config: WorkplaceConfig(dio: dio, requireHttps: false),
+      ).send(
+        context: bearer('tok'),
+        route: const WorkplaceRequestRoute(
+          method: 'GET',
+          pathSegments: ['apps'],
+        ),
+      );
 
-        final options = adapter.captured!;
-        expect(options.sendTimeout, equals(defaultTimeout));
-        expect(options.receiveTimeout, equals(defaultTimeout));
-      },
-    );
+      final options = adapter.captured!;
+      expect(options.sendTimeout, equals(defaultTimeout));
+      expect(options.receiveTimeout, equals(defaultTimeout));
+    });
 
     test('throws StateError on a blank token without sending', () async {
       await expectLater(

@@ -8,7 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_datasource_impl.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_action_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_access_mode.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_config.dart';
@@ -45,7 +45,6 @@ class _MockAdapter implements HttpClientAdapter {
 
 void main() {
   late WorkplaceDataSourceImpl datasource;
-  late Dio originalDio;
 
   final intentResponse = {
     'data': {
@@ -62,13 +61,11 @@ void main() {
   };
 
   setUp(() {
-    datasource = WorkplaceDataSourceImpl();
-    originalDio = WorkplaceDio.instance;
+    datasource = WorkplaceDataSourceImpl(config: testConfig);
   });
 
   tearDown(() {
     removeCozyBridge();
-    WorkplaceDio.setInstance(originalDio);
   });
 
   group('WorkplaceDataSourceImpl::createIntent::CozyBridge::', () {
@@ -127,7 +124,7 @@ void main() {
       'Should use the bearer-token flow when explicitly requested',
       () async {
         final adapter = _MockAdapter(intentResponse);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         final result = await datasource.createIntent(
           platformUrl: Uri.parse('https://platform.example.com'),

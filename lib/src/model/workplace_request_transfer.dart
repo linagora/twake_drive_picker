@@ -5,7 +5,7 @@ class WorkplaceRequestTransfer {
   final ProgressCallback? onSendProgress;
   final CancelToken? cancelToken;
 
-  /// Overrides `WorkplaceDio`'s short default; a multi-MB body needs minutes,
+  /// Overrides `WorkplaceConfig`'s short default; a multi-MB body needs minutes,
   /// and on web the blob adapter caps the whole XHR at connect + receive.
   final Duration? timeout;
 

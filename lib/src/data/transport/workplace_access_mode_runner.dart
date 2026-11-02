@@ -9,7 +9,7 @@ import '../../domain/exceptions/workplace_exceptions.dart';
 import '../../domain/state/workplace_intent_state.dart';
 import '../../domain/usecase/exchange_drive_token_interactor.dart';
 import '../../domain/usecase/workplace_call.dart';
-import '../bridge/cozy_bridge.dart';
+import '../../platform/drive_picker_platform.dart';
 
 /// Triggers the host app's OIDC refresh; returns the refreshed id token.
 typedef OidcRefreshTrigger = Future<String?> Function();
@@ -21,19 +21,25 @@ class WorkplaceAccessModeRunner {
     required ExchangeDriveTokenInteractor exchangeTokenInteractor,
     required String? Function() oidcTokenGetter,
     required OidcRefreshTrigger oidcRefreshTrigger,
+    DrivePickerPlatform? platform,
     bool Function()? isBridgeAvailable,
   }) : _exchangeTokenInteractor = exchangeTokenInteractor,
        _oidcTokenGetter = oidcTokenGetter,
        _oidcRefreshTrigger = oidcRefreshTrigger,
-       _isBridgeAvailable = isBridgeAvailable ?? _cozyBridgeAvailable;
+       _isBridgeAvailable =
+           isBridgeAvailable ?? _platformBridgeAvailable(platform);
 
   final ExchangeDriveTokenInteractor _exchangeTokenInteractor;
   final String? Function() _oidcTokenGetter;
   final OidcRefreshTrigger _oidcRefreshTrigger;
   final bool Function() _isBridgeAvailable;
 
-  static bool _cozyBridgeAvailable() =>
-      CozyBridge.isSupported && CozyBridge.isAvailable;
+  static bool Function() _platformBridgeAvailable(
+    DrivePickerPlatform? platform,
+  ) => () {
+    final resolved = platform ?? DrivePickerPlatform.current;
+    return resolved.isBridgeSupported && resolved.isBridgeAvailable;
+  };
 
   Future<T> run<T>(Uri platformUrl, WorkplaceCall<T> workplaceCall) async {
     if (_canUseBridge(workplaceCall)) {

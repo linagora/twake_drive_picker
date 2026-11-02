@@ -8,9 +8,10 @@ import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_ex
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 
 import '../test_utils/cozy_bridge_test_helper.dart';
+import '../test_utils/test_workplace_config.dart';
 
 void main() {
-  const executor = WorkplaceRequestExecutor();
+  final executor = WorkplaceRequestExecutor(config: testConfig);
   final context = WorkplaceRequestContext(
     platformUrl: Uri.parse('https://platform.example.com'),
     accessMode: const BridgeAccessMode(),

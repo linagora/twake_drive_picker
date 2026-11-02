@@ -11,7 +11,7 @@ import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_ex
 import 'package:twake_drive_picker/src/model/workplace_permission_request.dart';
 import 'package:twake_drive_picker/src/model/workplace_enums.dart';
 import 'package:twake_drive_picker/src/data/repository_impl/workplace_repository_impl.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 
 /// Queued responses; an int means "throw that HTTP status".
@@ -91,7 +91,6 @@ class _RecordingDataSource extends Fake implements WorkplaceDriveDataSource {
 
 void main() {
   late WorkplaceDriveDataSourceImpl datasource;
-  late Dio originalDio;
   final context = WorkplaceRequestContext(
     platformUrl: Uri.parse('https://platform.example.com'),
     accessMode: const BearerTokenAccessMode('test-token'),
@@ -115,11 +114,10 @@ void main() {
   };
 
   setUp(() {
-    datasource = WorkplaceDriveDataSourceImpl();
-    originalDio = WorkplaceDio.instance;
+    datasource = WorkplaceDriveDataSourceImpl(
+      executor: WorkplaceRequestExecutor(config: testConfig),
+    );
   });
-
-  tearDown(() => WorkplaceDio.setInstance(originalDio));
 
   group('WorkplaceDriveDataSourceImpl::createShareLink::', () {
     test(
@@ -163,7 +161,7 @@ void main() {
           capabilitiesResponse(flat: true),
           permissionResponse('abc123'),
         ]);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         final link = await datasource.createShareLink(
           context: context,
@@ -221,7 +219,7 @@ void main() {
           },
         },
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.createShareLink(context: context, fileId: 'file-1'),
@@ -234,7 +232,7 @@ void main() {
         capabilitiesResponse(flat: true),
         permissionResponse(''),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.createShareLink(context: context, fileId: 'file-1'),
@@ -247,7 +245,7 @@ void main() {
         capabilitiesResponse(flat: true),
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final nestedContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.nested.example.com'),
         accessMode: const BearerTokenAccessMode('test-token'),
@@ -266,7 +264,7 @@ void main() {
         capabilitiesResponse(flat: true),
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final singleLabelContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('http://localhost'),
         accessMode: const BearerTokenAccessMode('test-token'),
@@ -285,7 +283,7 @@ void main() {
         capabilitiesResponse(flat: true),
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final portContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.example.com:8443/base/?lang=en'),
         accessMode: const BearerTokenAccessMode('test-token'),
@@ -307,7 +305,7 @@ void main() {
         capabilitiesResponse(flat: true),
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final flatContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.example.com'),
         accessMode: const BearerTokenAccessMode('test-token'),
@@ -332,7 +330,7 @@ void main() {
           capabilitiesResponse(flat: false),
           permissionResponse('abc123'),
         ]);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
         final nestedContext = WorkplaceRequestContext(
           platformUrl: Uri.parse('https://user.example.com:8443/base/?lang=en'),
           accessMode: const BearerTokenAccessMode('test-token'),
@@ -357,7 +355,7 @@ void main() {
         },
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       final link = await datasource.createShareLink(
         context: context,
@@ -374,7 +372,7 @@ void main() {
           {'data': <String, dynamic>{}},
           permissionResponse('abc123'),
         ]);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         final link = await datasource.createShareLink(
           context: context,
@@ -390,7 +388,7 @@ void main() {
         <String, dynamic>{},
         permissionResponse('abc123'),
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       final link = await datasource.createShareLink(
         context: context,
@@ -407,7 +405,7 @@ void main() {
           {'data': <dynamic>[]},
           permissionResponse('abc123'),
         ]);
-        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        testDio.httpClientAdapter = adapter;
 
         final link = await datasource.createShareLink(
           context: context,
@@ -420,7 +418,7 @@ void main() {
 
     test('mints no link when the capabilities request fails', () async {
       final adapter = _QueueAdapter([500]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.createShareLink(context: context, fileId: 'file-1'),
@@ -431,7 +429,7 @@ void main() {
 
     test('surfaces the permissions failure without retrying', () async {
       final adapter = _QueueAdapter([capabilitiesResponse(flat: true), 403]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.createShareLink(context: context, fileId: 'file-1'),
@@ -454,7 +452,7 @@ void main() {
       final dataSource = _RecordingDataSource();
 
       final link = await WorkplaceRepositoryImpl(
-        WorkplaceDataSourceImpl(),
+        WorkplaceDataSourceImpl(config: testConfig),
         dataSource,
       ).createShareLink(context: context, fileId: 'file-1');
 

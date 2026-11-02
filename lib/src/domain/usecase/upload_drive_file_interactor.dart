@@ -13,7 +13,7 @@ typedef DriveFileProgressCallback = void Function(int count, int total);
 /// Returns the name Drive stored, which a name conflict may have suffixed.
 /// Throws [WorkplaceUploadCancelledException] once [cancelSignal] fires.
 class UploadDriveFileInteractor {
-  /// A streamed upload outlives `WorkplaceDio`'s default request timeouts.
+  /// A streamed upload outlives `WorkplaceConfig`'s default request timeouts.
   static const _uploadTimeout = Duration(minutes: 30);
 
   final WorkplaceRepository _repository;

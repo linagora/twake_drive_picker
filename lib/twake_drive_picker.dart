@@ -8,7 +8,7 @@ export 'src/data/datasource_impl/workplace_drive_datasource_impl.dart';
 export 'src/data/datasource_impl/workplace_request_executor.dart';
 export 'src/data/repository_impl/workplace_repository_impl.dart';
 export 'src/data/transport/workplace_access_mode_runner.dart';
-export 'src/data/workplace_dio.dart';
+export 'src/data/workplace_config.dart';
 export 'src/domain/exceptions/workplace_exceptions.dart';
 export 'src/domain/repository/workplace_repository.dart';
 export 'src/domain/state/workplace_intent_state.dart';
