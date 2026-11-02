@@ -9,5 +9,9 @@ class WorkplaceRequestTransfer {
   /// and on web the blob adapter caps the whole XHR at connect + receive.
   final Duration? timeout;
 
-  const WorkplaceRequestTransfer({this.onSendProgress, this.cancelToken, this.timeout});
+  const WorkplaceRequestTransfer({
+    this.onSendProgress,
+    this.cancelToken,
+    this.timeout,
+  });
 }

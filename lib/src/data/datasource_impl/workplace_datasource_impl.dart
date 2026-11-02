@@ -16,7 +16,7 @@ import '../../entity/workplace_intent_config.dart';
 
 class WorkplaceDataSourceImpl implements WorkplaceDataSource {
   WorkplaceDataSourceImpl({WorkplaceRequestExecutor? executor})
-      : _executor = executor ?? const WorkplaceRequestExecutor();
+    : _executor = executor ?? const WorkplaceRequestExecutor();
 
   final WorkplaceRequestExecutor _executor;
 
@@ -73,42 +73,50 @@ class WorkplaceDataSourceImpl implements WorkplaceDataSource {
 
   Map<String, dynamic> _buildIntentRequest(WorkplaceIntentConfig config) =>
       WorkplaceIntentRequest(
-    data: WorkplaceIntentDataRequest(
-      type: WorkplaceDataRequestType.intents,
-      attributes: WorkplaceIntentAttributesRequest(
-        action: WorkplaceAction.pick,
-        type: WorkplaceDocType.files,
-        permissions: [WorkplacePermission.get],
-        data: WorkplaceFilePickerConfigRequest(
-          sharingLink: WorkplaceActionConfigRequest.fromEntity(config.addAsLink),
-          downloadLink: config.addAsAttachment == null
-              ? null
-              : WorkplaceActionConfigRequest.fromEntity(config.addAsAttachment!),
-          theme: WorkplaceThemeConfigRequest.fromEntity(config.theme),
+        data: WorkplaceIntentDataRequest(
+          type: WorkplaceDataRequestType.intents,
+          attributes: WorkplaceIntentAttributesRequest(
+            action: WorkplaceAction.pick,
+            type: WorkplaceDocType.files,
+            permissions: [WorkplacePermission.get],
+            data: WorkplaceFilePickerConfigRequest(
+              sharingLink: WorkplaceActionConfigRequest.fromEntity(
+                config.addAsLink,
+              ),
+              downloadLink: config.addAsAttachment == null
+                  ? null
+                  : WorkplaceActionConfigRequest.fromEntity(
+                      config.addAsAttachment!,
+                    ),
+              theme: WorkplaceThemeConfigRequest.fromEntity(config.theme),
+            ),
+          ),
         ),
-      ),
-    ),
-  ).toJson();
+      ).toJson();
 
   @override
   Future<String> exchangeToken(Uri platformUrl, String oidcIdToken) async {
     final response = await WorkplaceDio.instance.post(
-      platformUrl.replace(
-        pathSegments: [
-          ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
-          'auth',
-          'token_exchange',
-        ],
-      ).toString(),
-      options: Options(
-        headers: {'Accept': 'application/json'},
-      ),
+      platformUrl
+          .replace(
+            pathSegments: [
+              ...platformUrl.pathSegments.where(
+                (segment) => segment.isNotEmpty,
+              ),
+              'auth',
+              'token_exchange',
+            ],
+          )
+          .toString(),
+      options: Options(headers: {'Accept': 'application/json'}),
       data: WorkplaceExchangeTokenRequest(
         idToken: oidcIdToken,
         exchangeType: WorkplaceExchangeType.app,
       ).toJson(),
     );
-    final data = WorkplaceExchangeTokenResponse.fromJson(_asJsonMap(response.data));
+    final data = WorkplaceExchangeTokenResponse.fromJson(
+      _asJsonMap(response.data),
+    );
     final accessToken = data.accessToken;
     return accessToken;
   }

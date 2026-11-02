@@ -33,7 +33,8 @@ class WorkplacePermissionAttributesRequest {
 
   const WorkplacePermissionAttributesRequest({required this.permissions});
 
-  Map<String, dynamic> toJson() => _$WorkplacePermissionAttributesRequestToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$WorkplacePermissionAttributesRequestToJson(this);
 }
 
 @JsonSerializable(createFactory: false, explicitToJson: true)
@@ -41,7 +42,10 @@ class WorkplacePermissionDataRequest {
   final WorkplaceDataRequestType type;
   final WorkplacePermissionAttributesRequest attributes;
 
-  const WorkplacePermissionDataRequest({required this.type, required this.attributes});
+  const WorkplacePermissionDataRequest({
+    required this.type,
+    required this.attributes,
+  });
 
   Map<String, dynamic> toJson() => _$WorkplacePermissionDataRequestToJson(this);
 }

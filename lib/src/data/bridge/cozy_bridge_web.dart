@@ -33,12 +33,14 @@ abstract final class CozyBridge {
   }) async {
     final bridge = _bridge;
     if (bridge == null) throw StateError('Cozy bridge unavailable');
-    final options = {
-      'method': method,
-      'path': path,
-      if (body != null) 'body': body,
-      if (headers != null) 'headers': headers,
-    }.jsify() as JSObject;
+    final options =
+        {
+              'method': method,
+              'path': path,
+              if (body != null) 'body': body,
+              if (headers != null) 'headers': headers,
+            }.jsify()
+            as JSObject;
     final result = await _CozyBridgeJs(bridge).fetchJSON(options).toDart;
     // JSON round-trip instead of dartify(), which would yield Map<Object?, Object?>.
     return result == null ? null : jsonDecode(_stringify(result));

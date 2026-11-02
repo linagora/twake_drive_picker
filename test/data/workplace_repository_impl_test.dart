@@ -46,30 +46,34 @@ class _RecordingDriveDataSource implements WorkplaceDriveDataSource {
 
 void main() {
   group('WorkplaceRepositoryImpl::uploadFile::', () {
-    test('forwards the context, spec and transfer to the drive datasource', () async {
-      final dataSource = _RecordingDriveDataSource();
-      final context = WorkplaceRequestContext(
-        platformUrl: Uri.parse('https://platform.example.com'),
-        accessMode: const BearerTokenAccessMode('test-token'),
-      );
-      const spec = WorkplaceUploadFileSpec(
-        fileName: 'report.pdf',
-        mimeType: 'application/pdf',
-        fileSize: 1234,
-        source: _StubUploadSource(),
-      );
-      const transfer = WorkplaceUploadTransfer(timeout: Duration(minutes: 30));
+    test(
+      'forwards the context, spec and transfer to the drive datasource',
+      () async {
+        final dataSource = _RecordingDriveDataSource();
+        final context = WorkplaceRequestContext(
+          platformUrl: Uri.parse('https://platform.example.com'),
+          accessMode: const BearerTokenAccessMode('test-token'),
+        );
+        const spec = WorkplaceUploadFileSpec(
+          fileName: 'report.pdf',
+          mimeType: 'application/pdf',
+          fileSize: 1234,
+          source: _StubUploadSource(),
+        );
+        const transfer = WorkplaceUploadTransfer(
+          timeout: Duration(minutes: 30),
+        );
 
-      final result = await WorkplaceRepositoryImpl(WorkplaceDataSourceImpl(), dataSource).uploadFile(
-        context: context,
-        spec: spec,
-        transfer: transfer,
-      );
+        final result = await WorkplaceRepositoryImpl(
+          WorkplaceDataSourceImpl(),
+          dataSource,
+        ).uploadFile(context: context, spec: spec, transfer: transfer);
 
-      expect(dataSource.context, same(context));
-      expect(dataSource.spec, same(spec));
-      expect(dataSource.transfer, same(transfer));
-      expect(result.fileId, equals('file-1'));
-    });
+        expect(dataSource.context, same(context));
+        expect(dataSource.spec, same(spec));
+        expect(dataSource.transfer, same(transfer));
+        expect(result.fileId, equals('file-1'));
+      },
+    );
   });
 }

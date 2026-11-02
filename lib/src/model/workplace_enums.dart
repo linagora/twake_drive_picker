@@ -2,19 +2,19 @@ import 'package:json_annotation/json_annotation.dart';
 
 enum WorkplaceAction {
   @JsonValue('PICK')
-  pick;
+  pick,
 }
 
 enum WorkplacePermission {
   @JsonValue('GET')
-  get;
+  get,
 }
 
 enum WorkplaceDataRequestType {
   @JsonValue('io.cozy.intents')
   intents,
   @JsonValue('io.cozy.permissions')
-  permissions;
+  permissions,
 }
 
 /// `Type=` on the upload route.
@@ -35,15 +35,9 @@ enum WorkplaceMagicFolder {
 
 enum WorkplaceDocType {
   @JsonValue('io.cozy.files')
-  files;
+  files,
 }
 
-enum WorkplaceExchangeType {
-  admin,
-  app;
-}
+enum WorkplaceExchangeType { admin, app }
 
-enum WorkplaceThemeType {
-  light,
-  dark;
-}
+enum WorkplaceThemeType { light, dark }

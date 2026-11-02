@@ -6,7 +6,10 @@ import 'package:twake_drive_picker/src/domain/usecase/drive_oversize_upload_call
 void main() {
   group('DriveOversizeUploadCall::', () {
     test('never rides the bridge', () {
-      expect(DriveOversizeUploadCall((_) async => const []).bridgePolicy, BridgePolicy.never);
+      expect(
+        DriveOversizeUploadCall((_) async => const []).bridgePolicy,
+        BridgePolicy.never,
+      );
     });
 
     test('returns the transfer links and forwards the access mode', () async {
@@ -28,7 +31,9 @@ void main() {
       final error = StateError('boom');
 
       await expectLater(
-        DriveOversizeUploadCall((_) async => throw error).call(const BearerTokenAccessMode('drive-token')),
+        DriveOversizeUploadCall(
+          (_) async => throw error,
+        ).call(const BearerTokenAccessMode('drive-token')),
         throwsA(same(error)),
       );
     });

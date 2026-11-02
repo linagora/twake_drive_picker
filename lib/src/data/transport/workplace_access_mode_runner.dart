@@ -22,17 +22,18 @@ class WorkplaceAccessModeRunner {
     required String? Function() oidcTokenGetter,
     required OidcRefreshTrigger oidcRefreshTrigger,
     bool Function()? isBridgeAvailable,
-  })  : _exchangeTokenInteractor = exchangeTokenInteractor,
-        _oidcTokenGetter = oidcTokenGetter,
-        _oidcRefreshTrigger = oidcRefreshTrigger,
-        _isBridgeAvailable = isBridgeAvailable ?? _cozyBridgeAvailable;
+  }) : _exchangeTokenInteractor = exchangeTokenInteractor,
+       _oidcTokenGetter = oidcTokenGetter,
+       _oidcRefreshTrigger = oidcRefreshTrigger,
+       _isBridgeAvailable = isBridgeAvailable ?? _cozyBridgeAvailable;
 
   final ExchangeDriveTokenInteractor _exchangeTokenInteractor;
   final String? Function() _oidcTokenGetter;
   final OidcRefreshTrigger _oidcRefreshTrigger;
   final bool Function() _isBridgeAvailable;
 
-  static bool _cozyBridgeAvailable() => CozyBridge.isSupported && CozyBridge.isAvailable;
+  static bool _cozyBridgeAvailable() =>
+      CozyBridge.isSupported && CozyBridge.isAvailable;
 
   Future<T> run<T>(Uri platformUrl, WorkplaceCall<T> workplaceCall) async {
     if (_canUseBridge(workplaceCall)) {
@@ -52,7 +53,8 @@ class WorkplaceAccessModeRunner {
     final oidcToken = _oidcTokenGetter();
     if (oidcToken == null) throw StateError('OIDC token is unavailable');
     final accessToken = await _exchangeAccessToken(platformUrl, oidcToken);
-    if (accessToken == null) throw StateError('Drive access token exchange failed');
+    if (accessToken == null)
+      throw StateError('Drive access token exchange failed');
     return workplaceCall(BearerTokenAccessMode(accessToken));
   }
 
@@ -88,8 +90,9 @@ class WorkplaceAccessModeRunner {
     )) {
       either.fold(
         // reported by DriveIntentMessageHandlerMixin._failWith, the single funnel.
-        (failure) => caughtFailure =
-            failure is FeatureFailure ? failure.exception : WorkplaceExchangeTokenException(),
+        (failure) => caughtFailure = failure is FeatureFailure
+            ? failure.exception
+            : WorkplaceExchangeTokenException(),
         (success) {
           if (success is ExchangeWorkplaceTokenSuccess) {
             accessToken = success.accessToken;
@@ -115,7 +118,11 @@ class WorkplaceAccessModeRunner {
     // Mirrors AuthorizationInterceptors.validateToRetryTheRequestWithNewToken.
     final currentToken = _oidcTokenGetter();
     if (currentToken != null && currentToken != failedToken) {
-      return _exchangeAccessToken(platformUrl, currentToken, refreshAttempted: true);
+      return _exchangeAccessToken(
+        platformUrl,
+        currentToken,
+        refreshAttempted: true,
+      );
     }
 
     final refreshedToken = await _oidcRefreshTrigger();
@@ -131,7 +138,11 @@ class WorkplaceAccessModeRunner {
     // IdP may omit id_token on refresh; retrying then would just re-401.
     if (refreshedToken == null || refreshedToken == failedToken) throw failure;
 
-    return _exchangeAccessToken(platformUrl, refreshedToken, refreshAttempted: true);
+    return _exchangeAccessToken(
+      platformUrl,
+      refreshedToken,
+      refreshAttempted: true,
+    );
   }
 
   // RFC 8693 invalid_grant is 400; token_exchange has also answered 401.

@@ -18,8 +18,9 @@ class WorkplacePermissionAttributesResponse {
 
   const WorkplacePermissionAttributesResponse({this.shortcodes});
 
-  factory WorkplacePermissionAttributesResponse.fromJson(Map<String, dynamic> json) =>
-      _$WorkplacePermissionAttributesResponseFromJson(json);
+  factory WorkplacePermissionAttributesResponse.fromJson(
+    Map<String, dynamic> json,
+  ) => _$WorkplacePermissionAttributesResponseFromJson(json);
 }
 
 @JsonSerializable(createToJson: false)

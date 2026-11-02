@@ -15,7 +15,7 @@ import '../../domain/exceptions/workplace_exceptions.dart';
 /// Writes a file to the Mail magic folder and mints its public share link.
 class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
   WorkplaceDriveDataSourceImpl({WorkplaceRequestExecutor? executor})
-      : _executor = executor ?? const WorkplaceRequestExecutor();
+    : _executor = executor ?? const WorkplaceRequestExecutor();
 
   /// Numbered names tried before a unique one; each attempt re-sends the body.
   static const _maxNumberedAttempts = 10;
@@ -25,7 +25,9 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
   Map<String, dynamic> _asJsonMap(dynamic data) {
     if (data is Map<String, dynamic>) return data;
     if (data is String) return jsonDecode(data) as Map<String, dynamic>;
-    throw FormatException('Expected JSON object or string, got: ${data.runtimeType}');
+    throw FormatException(
+      'Expected JSON object or string, got: ${data.runtimeType}',
+    );
   }
 
   @override
@@ -35,13 +37,16 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
     WorkplaceUploadTransfer transfer = const WorkplaceUploadTransfer(),
   }) async {
     final requestTransfer = _toRequestTransfer(transfer);
-    for (var attempt = 0;; attempt++) {
+    for (var attempt = 0; ; attempt++) {
       final isLast = attempt == _maxNumberedAttempts;
-      final name = isLast ? _uniqueNameFor(spec.fileName) : _nameFor(spec.fileName, attempt);
+      final name = isLast
+          ? _uniqueNameFor(spec.fileName)
+          : _nameFor(spec.fileName, attempt);
       try {
         return await _uploadOnce(context, name, spec, requestTransfer);
       } on DioException catch (exception) {
-        if (exception.type == DioExceptionType.cancel) throw WorkplaceUploadCancelledException();
+        if (exception.type == DioExceptionType.cancel)
+          throw WorkplaceUploadCancelledException();
         // The stack already holds a file by that name; retry with the next suffix.
         if (exception.response?.statusCode != 409 || isLast) rethrow;
       }
@@ -60,14 +65,14 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
         method: 'POST',
         // `:dir-id` is the magic-folder id; the executor encodes its '/' as %2F.
         pathSegments: ['files', WorkplaceMagicFolder.mail.value],
-        queryParameters: {
-          'Type': WorkplaceUploadType.file.value,
-          'Name': name,
-        },
+        queryParameters: {'Type': WorkplaceUploadType.file.value, 'Name': name},
       ),
       body: WorkplaceRequestBody(
         data: spec.source.requestData,
-        headers: {'Content-Type': spec.mimeType, 'Content-Length': '${spec.fileSize}'},
+        headers: {
+          'Content-Type': spec.mimeType,
+          'Content-Length': '${spec.fileSize}',
+        },
         extra: spec.source.dioExtra,
       ),
       transfer: transfer,
@@ -75,11 +80,16 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
     return _parseUploadedFile(data, sentName: name);
   }
 
-  static WorkplaceRequestTransfer _toRequestTransfer(WorkplaceUploadTransfer transfer) {
+  static WorkplaceRequestTransfer _toRequestTransfer(
+    WorkplaceUploadTransfer transfer,
+  ) {
     final signal = transfer.cancelSignal;
     final cancelToken = signal == null ? null : CancelToken();
     // A failed signal cancels too; neither path leaves an unhandled error.
-    signal?.then((_) => cancelToken!.cancel(), onError: (_) => cancelToken!.cancel());
+    signal?.then(
+      (_) => cancelToken!.cancel(),
+      onError: (_) => cancelToken!.cancel(),
+    );
     return WorkplaceRequestTransfer(
       onSendProgress: transfer.onProgress,
       cancelToken: cancelToken,
@@ -100,7 +110,10 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
       _nameFor(fileName, DateTime.now().millisecondsSinceEpoch);
 
   /// Drive may omit the name; the one sent is what it stored then.
-  DriveUploadedFile _parseUploadedFile(dynamic data, {required String sentName}) {
+  DriveUploadedFile _parseUploadedFile(
+    dynamic data, {
+    required String sentName,
+  }) {
     final parsed = WorkplaceFileResponse.fromJson(_asJsonMap(data));
     final doc = parsed.data;
     if (doc.id.isEmpty) {
@@ -132,24 +145,28 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
       ),
     );
     final shareCode = _parseShareCode(data);
-    return _driveAppUrl(context.platformUrl, flatSubdomains: flatSubdomains).replace(
-      path: '/public',
-      queryParameters: {'sharecode': shareCode},
-    );
+    return _driveAppUrl(
+      context.platformUrl,
+      flatSubdomains: flatSubdomains,
+    ).replace(path: '/public', queryParameters: {'sharecode': shareCode});
   }
 
   /// Needs no permission; an absent flag means nested, the cozy-stack default.
   Future<bool> _hasFlatSubdomains(WorkplaceRequestContext context) async {
     final data = await _executor.send(
       context: context,
-      route: const WorkplaceRequestRoute(method: 'GET', pathSegments: ['settings', 'capabilities']),
+      route: const WorkplaceRequestRoute(
+        method: 'GET',
+        pathSegments: ['settings', 'capabilities'],
+      ),
     );
     final payload = _asJsonMap(data)['data'];
     final attributes = payload is Map ? payload['attributes'] : null;
     return attributes is Map && attributes['flat_subdomains'] == true;
   }
 
-  Map<String, dynamic> _buildPermissionRequest(String fileId) => WorkplacePermissionRequest(
+  Map<String, dynamic> _buildPermissionRequest(String fileId) =>
+      WorkplacePermissionRequest(
         data: WorkplacePermissionDataRequest(
           type: WorkplaceDataRequestType.permissions,
           attributes: WorkplacePermissionAttributesRequest(
@@ -179,7 +196,9 @@ class WorkplaceDriveDataSourceImpl implements WorkplaceDriveDataSource {
     final dot = host.indexOf('.');
     final driveHost = !flatSubdomains
         ? 'drive.$host'
-        : dot <= 0 ? '$host-drive' : '${host.substring(0, dot)}-drive${host.substring(dot)}';
+        : dot <= 0
+        ? '$host-drive'
+        : '${host.substring(0, dot)}-drive${host.substring(dot)}';
     return platformUrl.replace(host: driveHost, path: '', query: '');
   }
 }

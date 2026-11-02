@@ -9,6 +9,5 @@ abstract final class CozyBridge {
     required String path,
     Object? body,
     Map<String, String>? headers,
-  }) =>
-      throw UnsupportedError('Cozy bridge is only available on web');
+  }) => throw UnsupportedError('Cozy bridge is only available on web');
 }

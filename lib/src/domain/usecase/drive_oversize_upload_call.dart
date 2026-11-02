@@ -12,5 +12,6 @@ class DriveOversizeUploadCall extends WorkplaceCall<List<Uri>> {
   BridgePolicy get bridgePolicy => BridgePolicy.never;
 
   @override
-  Future<List<Uri>> call(WorkplaceAccessMode accessMode) => _transfer(accessMode);
+  Future<List<Uri>> call(WorkplaceAccessMode accessMode) =>
+      _transfer(accessMode);
 }

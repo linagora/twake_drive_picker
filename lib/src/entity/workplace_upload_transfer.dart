@@ -8,5 +8,9 @@ class WorkplaceUploadTransfer {
   /// Overrides the transport's short default; a multi-MB body needs minutes.
   final Duration? timeout;
 
-  const WorkplaceUploadTransfer({this.onProgress, this.cancelSignal, this.timeout});
+  const WorkplaceUploadTransfer({
+    this.onProgress,
+    this.cancelSignal,
+    this.timeout,
+  });
 }

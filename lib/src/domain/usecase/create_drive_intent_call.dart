@@ -15,7 +15,11 @@ class CreateDriveIntentCall extends WorkplaceCall<WorkplaceIntent> {
   final Uri _platformUrl;
   final WorkplaceIntentConfig _config;
 
-  const CreateDriveIntentCall(this._interactor, this._platformUrl, this._config);
+  const CreateDriveIntentCall(
+    this._interactor,
+    this._platformUrl,
+    this._config,
+  );
 
   @override
   BridgePolicy get bridgePolicy => BridgePolicy.bearerReplay;
@@ -23,11 +27,17 @@ class CreateDriveIntentCall extends WorkplaceCall<WorkplaceIntent> {
   @override
   Future<WorkplaceIntent> call(WorkplaceAccessMode accessMode) async {
     WorkplaceIntent? intent;
-    await for (final either in _interactor.execute(_platformUrl, accessMode, config: _config)) {
+    await for (final either in _interactor.execute(
+      _platformUrl,
+      accessMode,
+      config: _config,
+    )) {
       either.fold(
         (failure) {
           // reported by DriveIntentMessageHandlerMixin._failWith, the single funnel.
-          throw failure is FeatureFailure ? failure.exception : WorkplaceCreateIntentException();
+          throw failure is FeatureFailure
+              ? failure.exception
+              : WorkplaceCreateIntentException();
         },
         (success) {
           if (success is CreateWorkplaceIntentSuccess) intent = success.intent;

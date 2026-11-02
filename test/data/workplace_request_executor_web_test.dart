@@ -37,7 +37,10 @@ void main() {
 
       final decoded = captured!.dartify() as Map;
       expect(decoded['method'], equals('POST'));
-      expect(decoded['path'], equals('/files/io.cozy.apps%2Fmail?Type=file&Name=a+b.pdf'));
+      expect(
+        decoded['path'],
+        equals('/files/io.cozy.apps%2Fmail?Type=file&Name=a+b.pdf'),
+      );
       expect(decoded.containsKey('body'), isFalse);
       expect(decoded.containsKey('headers'), isFalse);
     });
@@ -71,7 +74,10 @@ void main() {
 
       await executor.send(
         context: context,
-        route: const WorkplaceRequestRoute(method: 'POST', pathSegments: ['permissions']),
+        route: const WorkplaceRequestRoute(
+          method: 'POST',
+          pathSegments: ['permissions'],
+        ),
         body: const WorkplaceRequestBody(
           data: {'a': 1},
           headers: {'Content-Type': 'application/json'},

@@ -26,13 +26,18 @@ class WorkplaceRequestExecutor {
     return switch (context.accessMode) {
       // The bridge resolves once: no extra, no progress, no cancellation.
       BridgeAccessMode() => CozyBridge.fetchJson(
-          method: route.method,
-          path: _bridgePath(route),
-          body: body.data,
-          headers: body.headers.isEmpty ? null : body.headers,
-        ),
+        method: route.method,
+        path: _bridgePath(route),
+        body: body.data,
+        headers: body.headers.isEmpty ? null : body.headers,
+      ),
       BearerTokenAccessMode(:final accessToken) => _sendWithBearerToken(
-          context.platformUrl, accessToken, route, body, transfer),
+        context.platformUrl,
+        accessToken,
+        route,
+        body,
+        transfer,
+      ),
     };
   }
 
@@ -41,8 +46,10 @@ class WorkplaceRequestExecutor {
     final path = '/${route.pathSegments.map(Uri.encodeComponent).join('/')}';
     if (route.queryParameters.isEmpty) return path;
     final query = route.queryParameters.entries
-        .map((entry) =>
-            '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}')
+        .map(
+          (entry) =>
+              '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}',
+        )
         .join('&');
     return '$path?$query';
   }
@@ -58,18 +65,20 @@ class WorkplaceRequestExecutor {
     if (accessToken.trim().isEmpty) {
       throw StateError('Access token is empty');
     }
-    final url = platformUrl.replace(
-      pathSegments: [
-        ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
-        ...route.pathSegments,
-      ],
-      queryParameters: {
-        ...platformUrl.queryParameters,
-        ...route.queryParameters,
-        // Required for cozy-stack to accept a bearer-only (no session) request.
-        'force_session_id': 'true',
-      },
-    ).toString();
+    final url = platformUrl
+        .replace(
+          pathSegments: [
+            ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
+            ...route.pathSegments,
+          ],
+          queryParameters: {
+            ...platformUrl.queryParameters,
+            ...route.queryParameters,
+            // Required for cozy-stack to accept a bearer-only (no session) request.
+            'force_session_id': 'true',
+          },
+        )
+        .toString();
     final response = await WorkplaceDio.instance.request(
       url,
       options: Options(

@@ -98,21 +98,21 @@ void main() {
   );
 
   Map<String, dynamic> permissionResponse(String code) => {
-        'data': {
-          'id': 'perm-1',
-          'attributes': {
-            'shortcodes': {'code': code},
-          },
-        },
-      };
+    'data': {
+      'id': 'perm-1',
+      'attributes': {
+        'shortcodes': {'code': code},
+      },
+    },
+  };
 
   Map<String, dynamic> capabilitiesResponse({required bool flat}) => {
-        'data': {
-          'type': 'io.cozy.settings',
-          'id': 'io.cozy.settings.capabilities',
-          'attributes': {'flat_subdomains': flat},
-        },
-      };
+    'data': {
+      'type': 'io.cozy.settings',
+      'id': 'io.cozy.settings.capabilities',
+      'attributes': {'flat_subdomains': flat},
+    },
+  };
 
   setUp(() {
     datasource = WorkplaceDriveDataSourceImpl();
@@ -122,55 +122,94 @@ void main() {
   tearDown(() => WorkplaceDio.setInstance(originalDio));
 
   group('WorkplaceDriveDataSourceImpl::createShareLink::', () {
-    test('WorkplacePermissionRequest.toJson emits the io.cozy types and GET verb', () {
-      final json = const WorkplacePermissionRequest(
-        data: WorkplacePermissionDataRequest(
-          type: WorkplaceDataRequestType.permissions,
-          attributes: WorkplacePermissionAttributesRequest(
-            permissions: WorkplacePermissionSetRequest(
-              file: WorkplacePermissionRuleRequest(
-                type: WorkplaceDocType.files,
-                verbs: [WorkplacePermission.get],
-                values: ['file-1'],
+    test(
+      'WorkplacePermissionRequest.toJson emits the io.cozy types and GET verb',
+      () {
+        final json = const WorkplacePermissionRequest(
+          data: WorkplacePermissionDataRequest(
+            type: WorkplaceDataRequestType.permissions,
+            attributes: WorkplacePermissionAttributesRequest(
+              permissions: WorkplacePermissionSetRequest(
+                file: WorkplacePermissionRuleRequest(
+                  type: WorkplaceDocType.files,
+                  verbs: [WorkplacePermission.get],
+                  values: ['file-1'],
+                ),
               ),
             ),
           ),
-        ),
-      ).toJson();
+        ).toJson();
 
-      expect(json['data']['type'], equals('io.cozy.permissions'));
-      expect(json['data']['attributes']['permissions']['file']['type'], equals('io.cozy.files'));
-      expect(json['data']['attributes']['permissions']['file']['verbs'], equals(['GET']));
-      expect(json['data']['attributes']['permissions']['file']['values'], equals(['file-1']));
-    });
+        expect(json['data']['type'], equals('io.cozy.permissions'));
+        expect(
+          json['data']['attributes']['permissions']['file']['type'],
+          equals('io.cozy.files'),
+        );
+        expect(
+          json['data']['attributes']['permissions']['file']['verbs'],
+          equals(['GET']),
+        );
+        expect(
+          json['data']['attributes']['permissions']['file']['values'],
+          equals(['file-1']),
+        );
+      },
+    );
 
-    test('reads the code from shortcodes.code and builds <driveApp>/public?sharecode=', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('abc123')]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'reads the code from shortcodes.code and builds <driveApp>/public?sharecode=',
+      () async {
+        final adapter = _QueueAdapter([
+          capabilitiesResponse(flat: true),
+          permissionResponse('abc123'),
+        ]);
+        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
-      final link = await datasource.createShareLink(context: context, fileId: 'file-1');
+        final link = await datasource.createShareLink(
+          context: context,
+          fileId: 'file-1',
+        );
 
-      expect(link.toString(), equals('https://platform-drive.example.com/public?sharecode=abc123'));
-      expect(adapter.capturedOptions.first.method, equals('GET'));
-      expect(adapter.capturedOptions.first.uri.path, endsWith('/settings/capabilities'));
-      expect(adapter.capturedOptions.last.uri.queryParameters['codes'], equals('code'));
-      expect(adapter.capturedOptions, hasLength(2));
-    });
+        expect(
+          link.toString(),
+          equals('https://platform-drive.example.com/public?sharecode=abc123'),
+        );
+        expect(adapter.capturedOptions.first.method, equals('GET'));
+        expect(
+          adapter.capturedOptions.first.uri.path,
+          endsWith('/settings/capabilities'),
+        );
+        expect(
+          adapter.capturedOptions.last.uri.queryParameters['codes'],
+          equals('code'),
+        );
+        expect(adapter.capturedOptions, hasLength(2));
+      },
+    );
 
-    test('POSTs a JSON GET rule on the given file id to /permissions', () async {
-      final executor = _RecordingExecutor();
+    test(
+      'POSTs a JSON GET rule on the given file id to /permissions',
+      () async {
+        final executor = _RecordingExecutor();
 
-      await WorkplaceDriveDataSourceImpl(executor: executor)
-          .createShareLink(context: context, fileId: 'file-1');
+        await WorkplaceDriveDataSourceImpl(
+          executor: executor,
+        ).createShareLink(context: context, fileId: 'file-1');
 
-      expect(executor.route?.method, equals('POST'));
-      expect(executor.route?.pathSegments, equals(['permissions']));
-      expect(executor.body?.headers, equals({'Content-Type': 'application/json'}));
-      final rule = (executor.body?.data as Map)['data']['attributes']['permissions']['file'];
-      expect(rule['type'], equals('io.cozy.files'));
-      expect(rule['verbs'], equals(['GET']));
-      expect(rule['values'], equals(['file-1']));
-    });
+        expect(executor.route?.method, equals('POST'));
+        expect(executor.route?.pathSegments, equals(['permissions']));
+        expect(
+          executor.body?.headers,
+          equals({'Content-Type': 'application/json'}),
+        );
+        final rule =
+            (executor.body?.data
+                as Map)['data']['attributes']['permissions']['file'];
+        expect(rule['type'], equals('io.cozy.files'));
+        expect(rule['verbs'], equals(['GET']));
+        expect(rule['values'], equals(['file-1']));
+      },
+    );
 
     test('throws StateError when the response carries no share code', () async {
       final adapter = _QueueAdapter([
@@ -191,7 +230,10 @@ void main() {
     });
 
     test('throws StateError when the share code is empty', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('')]);
+      final adapter = _QueueAdapter([
+        capabilitiesResponse(flat: true),
+        permissionResponse(''),
+      ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
       await expectLater(
@@ -201,94 +243,147 @@ void main() {
     });
 
     test('builds the flat drive subdomain for a multi-label host', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('abc123')]);
+      final adapter = _QueueAdapter([
+        capabilitiesResponse(flat: true),
+        permissionResponse('abc123'),
+      ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
       final nestedContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.nested.example.com'),
         accessMode: const BearerTokenAccessMode('test-token'),
       );
 
-      final link = await datasource.createShareLink(context: nestedContext, fileId: 'file-1');
+      final link = await datasource.createShareLink(
+        context: nestedContext,
+        fileId: 'file-1',
+      );
 
       expect(link.host, equals('user-drive.nested.example.com'));
     });
 
     test('appends -drive to a single-label host', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('abc123')]);
+      final adapter = _QueueAdapter([
+        capabilitiesResponse(flat: true),
+        permissionResponse('abc123'),
+      ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
       final singleLabelContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('http://localhost'),
         accessMode: const BearerTokenAccessMode('test-token'),
       );
 
-      final link = await datasource.createShareLink(context: singleLabelContext, fileId: 'file-1');
+      final link = await datasource.createShareLink(
+        context: singleLabelContext,
+        fileId: 'file-1',
+      );
 
       expect(link.host, equals('localhost-drive'));
     });
 
     test('keeps the platform port and drops its path and query', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('abc123')]);
+      final adapter = _QueueAdapter([
+        capabilitiesResponse(flat: true),
+        permissionResponse('abc123'),
+      ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
       final portContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.example.com:8443/base/?lang=en'),
         accessMode: const BearerTokenAccessMode('test-token'),
       );
 
-      final link = await datasource.createShareLink(context: portContext, fileId: 'file-1');
+      final link = await datasource.createShareLink(
+        context: portContext,
+        fileId: 'file-1',
+      );
 
-      expect(link.toString(), equals('https://user-drive.example.com:8443/public?sharecode=abc123'));
+      expect(
+        link.toString(),
+        equals('https://user-drive.example.com:8443/public?sharecode=abc123'),
+      );
     });
 
     test('builds the flat drive subdomain, flat host', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: true), permissionResponse('abc123')]);
+      final adapter = _QueueAdapter([
+        capabilitiesResponse(flat: true),
+        permissionResponse('abc123'),
+      ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
       final flatContext = WorkplaceRequestContext(
         platformUrl: Uri.parse('https://user.example.com'),
         accessMode: const BearerTokenAccessMode('test-token'),
       );
 
-      final link = await datasource.createShareLink(context: flatContext, fileId: 'file-1');
-
-      expect(link.host, equals('user-drive.example.com'));
-      expect(link.toString(), equals('https://user-drive.example.com/public?sharecode=abc123'));
-    });
-
-    test('builds the nested drive subdomain when the stack is not flat', () async {
-      final adapter = _QueueAdapter([capabilitiesResponse(flat: false), permissionResponse('abc123')]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
-      final nestedContext = WorkplaceRequestContext(
-        platformUrl: Uri.parse('https://user.example.com:8443/base/?lang=en'),
-        accessMode: const BearerTokenAccessMode('test-token'),
+      final link = await datasource.createShareLink(
+        context: flatContext,
+        fileId: 'file-1',
       );
 
-      final link = await datasource.createShareLink(context: nestedContext, fileId: 'file-1');
-
-      expect(link.toString(), equals('https://drive.user.example.com:8443/public?sharecode=abc123'));
+      expect(link.host, equals('user-drive.example.com'));
+      expect(
+        link.toString(),
+        equals('https://user-drive.example.com/public?sharecode=abc123'),
+      );
     });
+
+    test(
+      'builds the nested drive subdomain when the stack is not flat',
+      () async {
+        final adapter = _QueueAdapter([
+          capabilitiesResponse(flat: false),
+          permissionResponse('abc123'),
+        ]);
+        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+        final nestedContext = WorkplaceRequestContext(
+          platformUrl: Uri.parse('https://user.example.com:8443/base/?lang=en'),
+          accessMode: const BearerTokenAccessMode('test-token'),
+        );
+
+        final link = await datasource.createShareLink(
+          context: nestedContext,
+          fileId: 'file-1',
+        );
+
+        expect(
+          link.toString(),
+          equals('https://drive.user.example.com:8443/public?sharecode=abc123'),
+        );
+      },
+    );
 
     test('treats a missing flat_subdomains flag as nested', () async {
       final adapter = _QueueAdapter([
-        {'data': {'attributes': <String, dynamic>{}}},
+        {
+          'data': {'attributes': <String, dynamic>{}},
+        },
         permissionResponse('abc123'),
       ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
-      final link = await datasource.createShareLink(context: context, fileId: 'file-1');
+      final link = await datasource.createShareLink(
+        context: context,
+        fileId: 'file-1',
+      );
 
       expect(link.host, equals('drive.platform.example.com'));
     });
 
-    test('treats a capabilities response without attributes as nested', () async {
-      final adapter = _QueueAdapter([
-        {'data': <String, dynamic>{}},
-        permissionResponse('abc123'),
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'treats a capabilities response without attributes as nested',
+      () async {
+        final adapter = _QueueAdapter([
+          {'data': <String, dynamic>{}},
+          permissionResponse('abc123'),
+        ]);
+        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
-      final link = await datasource.createShareLink(context: context, fileId: 'file-1');
+        final link = await datasource.createShareLink(
+          context: context,
+          fileId: 'file-1',
+        );
 
-      expect(link.host, equals('drive.platform.example.com'));
-    });
+        expect(link.host, equals('drive.platform.example.com'));
+      },
+    );
 
     test('treats a capabilities response without data as nested', () async {
       final adapter = _QueueAdapter([
@@ -297,22 +392,31 @@ void main() {
       ]);
       WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
-      final link = await datasource.createShareLink(context: context, fileId: 'file-1');
+      final link = await datasource.createShareLink(
+        context: context,
+        fileId: 'file-1',
+      );
 
       expect(link.host, equals('drive.platform.example.com'));
     });
 
-    test('treats a capabilities response whose data is not an object as nested', () async {
-      final adapter = _QueueAdapter([
-        {'data': <dynamic>[]},
-        permissionResponse('abc123'),
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'treats a capabilities response whose data is not an object as nested',
+      () async {
+        final adapter = _QueueAdapter([
+          {'data': <dynamic>[]},
+          permissionResponse('abc123'),
+        ]);
+        WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
 
-      final link = await datasource.createShareLink(context: context, fileId: 'file-1');
+        final link = await datasource.createShareLink(
+          context: context,
+          fileId: 'file-1',
+        );
 
-      expect(link.host, equals('drive.platform.example.com'));
-    });
+        expect(link.host, equals('drive.platform.example.com'));
+      },
+    );
 
     test('mints no link when the capabilities request fails', () async {
       final adapter = _QueueAdapter([500]);
@@ -331,11 +435,13 @@ void main() {
 
       await expectLater(
         datasource.createShareLink(context: context, fileId: 'file-1'),
-        throwsA(isA<DioException>().having(
-          (exception) => exception.response?.statusCode,
-          'statusCode',
-          403,
-        )),
+        throwsA(
+          isA<DioException>().having(
+            (exception) => exception.response?.statusCode,
+            'statusCode',
+            403,
+          ),
+        ),
       );
       expect(adapter.capturedOptions, hasLength(2));
       expect(adapter.capturedOptions.last.method, equals('POST'));
@@ -347,8 +453,10 @@ void main() {
     test('forwards the context and file id to the datasource', () async {
       final dataSource = _RecordingDataSource();
 
-      final link = await WorkplaceRepositoryImpl(WorkplaceDataSourceImpl(), dataSource)
-          .createShareLink(context: context, fileId: 'file-1');
+      final link = await WorkplaceRepositoryImpl(
+        WorkplaceDataSourceImpl(),
+        dataSource,
+      ).createShareLink(context: context, fileId: 'file-1');
 
       expect(dataSource.context, same(context));
       expect(dataSource.fileId, equals('file-1'));
