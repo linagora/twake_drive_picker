@@ -16,14 +16,20 @@ class WorkplaceIntentConfig extends Equatable {
   /// Whether several items can be selected. Null keeps Drive's default (true).
   final bool? multiple;
 
-  /// Folder the picker opens in. Null keeps Drive's default (the root).
+  /// Folder the picker opens in, on the Drive tab. Null keeps Drive's default
+  /// (the root). Drive resolves it on its own instance only; an unknown id
+  /// falls back to the root unless [restrictToDefaultDir] is true.
   final String? defaultDirId;
 
-  /// Restricts navigation and selection to [defaultDirId]. Null keeps Drive's
-  /// default (false).
+  /// Restricts navigation and selection to [defaultDirId] and shows only the
+  /// Drive tab. Null keeps Drive's default (false). Drive fails the intent
+  /// when this is true without a [defaultDirId], or with [tabs] other than
+  /// `drive`.
   final bool? restrictToDefaultDir;
 
-  /// Tabs to show. Null keeps Drive's default (all of them).
+  /// Tabs to show. Null keeps Drive's default (all of them). Drive fails the
+  /// intent on an empty list and shows the tabs in its own order, not the
+  /// list's.
   final List<WorkplaceFilePickerTab>? tabs;
 
   const WorkplaceIntentConfig({
