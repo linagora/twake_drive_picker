@@ -185,7 +185,10 @@ showModalBottomSheet<void>(
   `imageAssets` the loading overlay is a spinner and the close button a
   Material icon; give them to get the Drive skeleton and your own buttons.
 - The theme (light / dark) is part of `filePickerConfig`.
-- `platform` can be passed to replace the compiled-in one (tests).
+- `platform` can be passed to replace the compiled-in one (tests). A custom
+  `DrivePickerPlatform` must override `buildView` to support this widget; the
+  default throws an `UnsupportedError`, so a platform that only implements
+  `buildModal` keeps compiling and keeps working with the modal.
 
 ### 3. Headless core
 
@@ -238,19 +241,27 @@ Drive reads these from the picker config. Every one is optional; when unset it
 is left out of the request and Drive keeps its default, so nothing changes for
 existing callers.
 
-| Where | Option | Drive default |
-|---|---|---|
-| `WorkplaceIntentConfig` / `WorkplaceFilePickerConfigRequest` | `multiple` | `true` |
-| | `defaultDirId` | root |
-| | `restrictToDefaultDir` | `false` |
-| | `tabs` (`drive`, `recents`, `sharings`) | all three |
-| `WorkplaceActionConfig` / `WorkplaceActionConfigRequest` | `allowFolder` | links yes, attachments no |
-| | `accept` (`file`, `folder`, mime patterns such as `image/*`) | any |
-| | `maxFileCount` | no limit |
+| Where | Option | Drive default | Notes |
+|---|---|---|---|
+| `WorkplaceIntentConfig` / `WorkplaceFilePickerConfigRequest` | `multiple` | `true` | |
+| | `defaultDirId` | root | Drive tab only; an id Drive cannot resolve falls back to the root |
+| | `restrictToDefaultDir` | `false` | Needs `defaultDirId`; shows the Drive tab only |
+| | `tabs` (`drive`, `recents`, `sharings`) | all three | Not empty; shown in Drive's order |
+| `WorkplaceActionConfig` / `WorkplaceActionConfigRequest` | `allowFolder` | links yes, attachments no | Legacy in Drive: ignored when `accept` is set; attachments never take folders |
+| | `accept` (`file`, `folder`, mime patterns such as `image/*`) | from `allowFolder` | Any entry matches; an empty list accepts nothing |
+| | `maxFileCount` | no limit | Counts folders too |
 
-These keys are read by the Drive app (`linagora/twake-drive`,
-`FilePicker/config.js` and `constraints.js`); they are not in the public
-cozy-stack intents documentation, so check the Drive version you deploy against.
+Drive rejects the intent on an invalid combination (empty `tabs`,
+`restrictToDefaultDir` without `defaultDirId` or with a tab other than
+`drive`), so leave an option unset unless you need it.
+
+These keys are read by the Drive app, not by cozy-stack, and are not in the
+public [cozy-stack intents documentation](https://github.com/cozy/cozy-stack/blob/master/docs/intents.md).
+They are supported from Twake Drive
+[1.108.0](https://github.com/linagora/twake-drive/tree/1.108.0)
+(`FilePicker/config.js`, `FilePicker/constraints.js`, `intentConfig.js`,
+`pickerNavigation.js`); an older Drive ignores them, so check the version you
+deploy against.
 
 ## Configuration
 

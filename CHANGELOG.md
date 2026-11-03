@@ -32,15 +32,22 @@ First release under the name `twake_drive_picker` (it was
   `twake_drive_picker.dart` exports both and keeps the same surface.
   `CozyBridgeTransport` is the interface the data layer uses for the cozy
   bridge; `WorkplaceRequestExecutor` and `WorkplaceAccessModeRunner` take it as
-  `bridge:` (they took a `platform:` earlier in this unreleased version).
+  `bridge:`. Their `platform:` parameter is kept as a deprecated alias
+  (`bridge:` wins when both are given) and will be removed in the next release.
 - `DriveIntentWebView`: the picker without a dialog, for hosts that bring their
   own sheet or route. It reports through `onResult` / `onClose`; `imageAssets`
   is optional. The existing modal is this view inside the dialog.
+  `DrivePickerPlatform.buildView` backs it; it is not abstract, so a custom
+  platform that only implements `buildModal` still compiles (the default
+  throws an `UnsupportedError`).
 - `drivePickOutcomeOfMessage`: maps a Drive page message to a
   `DrivePickOutcome` for headless hosts.
 - Optional picker options Drive supports: `multiple`, `defaultDirId`,
   `restrictToDefaultDir`, `tabs` (`WorkplaceFilePickerTab`) and, per action,
-  `allowFolder`, `accept`, `maxFileCount`. Unset means omitted from the request.
+  `allowFolder`, `accept`, `maxFileCount`. Unset means omitted from the
+  request, so the JSON sent is unchanged for existing callers. They need Twake
+  Drive 1.108.0 or later; `allowFolder` is legacy in Drive (ignored when
+  `accept` is set).
 - Headless usage example (`example/lib/headless_example.dart`) and README
   sections for the three usage modes.
 - A test that locks the export surface of `twake_drive_picker.dart`.
