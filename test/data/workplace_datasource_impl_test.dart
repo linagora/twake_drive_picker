@@ -9,11 +9,22 @@ import 'package:twake_drive_picker/src/data/datasource_impl/workplace_datasource
 import 'package:twake_drive_picker/src/data/workplace_config.dart';
 import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_action_config.dart';
+import 'package:twake_drive_picker/src/entity/workplace_file_picker_tab.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_access_mode.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_theme.dart';
 
 /// Captures the last request and returns a fixed JSON response.
+Map<String, dynamic> _pickerConfigSent(_MockAdapter adapter) {
+  final body =
+      jsonDecode(jsonEncode(adapter.capturedOptions!.data))
+          as Map<String, dynamic>;
+  final attributes =
+      (body['data'] as Map<String, dynamic>)['attributes']
+          as Map<String, dynamic>;
+  return attributes['data'] as Map<String, dynamic>;
+}
+
 class _MockAdapter implements HttpClientAdapter {
   RequestOptions? capturedOptions;
   final dynamic responseData;
@@ -380,6 +391,61 @@ void main() {
       expect(downloadLink['label'], equals('https://attach.url'));
       final theme = config['theme'] as Map<String, dynamic>;
       expect(theme['type'], equals('dark'));
+    });
+
+    test(
+      'Should keep the picker options out of the request by default',
+      () async {
+        final adapter = _MockAdapter(intentResponse);
+        testDio.httpClientAdapter = adapter;
+
+        await datasource.createIntent(
+          platformUrl: Uri.parse('https://platform.example.com'),
+          accessMode: const BearerTokenAccessMode('test-token'),
+          config: const WorkplaceIntentConfig(
+            addAsLink: WorkplaceActionConfig(label: 'l'),
+            theme: WorkplaceTheme.light,
+          ),
+        );
+
+        final config = _pickerConfigSent(adapter);
+        expect(
+          config.keys,
+          unorderedEquals(['sharingLink', 'downloadLink', 'theme']),
+        );
+      },
+    );
+
+    test('Should forward the picker options when set', () async {
+      final adapter = _MockAdapter(intentResponse);
+      testDio.httpClientAdapter = adapter;
+
+      await datasource.createIntent(
+        platformUrl: Uri.parse('https://platform.example.com'),
+        accessMode: const BearerTokenAccessMode('test-token'),
+        config: const WorkplaceIntentConfig(
+          addAsLink: WorkplaceActionConfig(label: 'l', allowFolder: false),
+          addAsAttachment: WorkplaceActionConfig(
+            label: 'a',
+            accept: ['image/*'],
+            maxFileCount: 2,
+          ),
+          theme: WorkplaceTheme.light,
+          multiple: false,
+          defaultDirId: 'dir-9',
+          restrictToDefaultDir: true,
+          tabs: [WorkplaceFilePickerTab.drive],
+        ),
+      );
+
+      final config = _pickerConfigSent(adapter);
+      expect(config['multiple'], isFalse);
+      expect(config['defaultDirId'], 'dir-9');
+      expect(config['restrictToDefaultDir'], isTrue);
+      expect(config['tabs'], ['drive']);
+      expect((config['sharingLink'] as Map)['allowFolder'], isFalse);
+      expect((config['downloadLink'] as Map)['accept'], ['image/*']);
+      expect((config['downloadLink'] as Map)['maxFileCount'], 2);
     });
 
     test('Should serialize attachment size limits in intent request', () async {

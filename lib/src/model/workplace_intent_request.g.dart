@@ -12,6 +12,9 @@ Map<String, dynamic> _$WorkplaceActionConfigRequestToJson(
   'label': ?instance.label,
   'maxFileSize': ?instance.maxFileSize,
   'availableSize': ?instance.availableSize,
+  'allowFolder': ?instance.allowFolder,
+  'accept': ?instance.accept,
+  'maxFileCount': ?instance.maxFileCount,
 };
 
 Map<String, dynamic> _$WorkplaceThemeConfigRequestToJson(
@@ -29,6 +32,18 @@ Map<String, dynamic> _$WorkplaceFilePickerConfigRequestToJson(
   'sharingLink': instance.sharingLink.toJson(),
   'downloadLink': instance.downloadLink?.toJson(),
   'theme': instance.theme.toJson(),
+  'multiple': ?instance.multiple,
+  'defaultDirId': ?instance.defaultDirId,
+  'restrictToDefaultDir': ?instance.restrictToDefaultDir,
+  'tabs': ?instance.tabs
+      ?.map((e) => _$WorkplaceFilePickerTabEnumMap[e]!)
+      .toList(),
+};
+
+const _$WorkplaceFilePickerTabEnumMap = {
+  WorkplaceFilePickerTab.drive: 'drive',
+  WorkplaceFilePickerTab.recents: 'recents',
+  WorkplaceFilePickerTab.sharings: 'sharings',
 };
 
 Map<String, dynamic> _$WorkplaceIntentAttributesRequestToJson(

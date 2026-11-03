@@ -35,6 +35,7 @@ export 'src/entity/drive_shared_file.dart';
 export 'src/entity/drive_uploaded_file.dart';
 export 'src/entity/workplace_access_mode.dart';
 export 'src/entity/workplace_action_config.dart';
+export 'src/entity/workplace_file_picker_tab.dart';
 export 'src/entity/workplace_intent.dart';
 export 'src/entity/workplace_intent_access_mode.dart';
 export 'src/entity/workplace_intent_config.dart';
