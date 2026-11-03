@@ -56,6 +56,15 @@ Everything else (domain, data, message parsing, picker logic) is shared and
 imports no web library; a test enforces it. `DrivePickerPlatform` is the
 interface between the two.
 
+## Entry points
+
+| Import | Contains | Use it for |
+|---|---|---|
+| `package:twake_drive_picker/core.dart` | datasource, repository, interactors, `CozyBridge`, intent request / state, `DrivePickOutcome`, origin validator, message parsing | headless use; imports no widget, WebView or browser library (a test enforces it) |
+| `package:twake_drive_picker/ui.dart` | the dialog modal, `DriveIntentWebView`, shell, mixins, localizations, platforms | the picker UI |
+| `package:twake_drive_picker/twake_drive_picker.dart` | both of the above | existing apps such as Tmail; same surface as before |
+| `package:twake_drive_picker/web.dart` | the web platform classes | web apps that need them explicitly |
+
 - **Mobile (Twake Chat)**: import `package:twake_drive_picker/twake_drive_picker.dart`
   only. No web code is compiled in.
 - **Web (Twake Mail)**: the same import works and, on web builds, also
@@ -65,7 +74,19 @@ interface between the two.
 `package:twake_drive_picker/twake_workplace_protocol.dart` (the former name) is
 a deprecated re-export, removed in the next release.
 
-## Open the picker
+## Usage modes
+
+| Mode | For | Entry point |
+|---|---|---|
+| 1. Full UI | Tmail: tap, dialog, result callback | `DrivePickerStateMixin` + `DriveIntentWebViewModal` |
+| 2. Embeddable widget | Chat: the picker in your own sheet or route | `DriveIntentWebView` |
+| 3. Headless core | your own WebView or flow, no widget | `core.dart` |
+
+**Sign-in is the host app's job in every mode.** The picker contains no SSO
+logic: it receives an OIDC id token (to trade for a Drive access token) or a
+configured `Dio`, plus the platform URL (`workplaceFqdn`).
+
+### 1. Full UI (as Tmail)
 
 Mix `DrivePickerStateMixin` into the `State` of the widget that opens it, and
 give it a way to create an intent. A complete app is in [`example/`](example):
@@ -106,7 +127,7 @@ class _PickButtonState extends State<PickButton> with DrivePickerStateMixin {
 `WorkplaceAccessModeRunner` (cozy bridge when available on web, otherwise an
 OIDC token exchange); see [`example/lib/src/example_app.dart`](example/lib/src/example_app.dart).
 
-### Mobile
+#### Mobile
 
 ```dart
 // main_mobile.dart
@@ -117,7 +138,7 @@ The Drive page runs in a WebView. The picker only trusts messages whose
 sender origin is the native URL of the WebView, cancels navigations away from
 the intent origin, and injects its bridge script in the main frame only.
 
-### Web
+#### Web
 
 ```dart
 // main_web.dart
@@ -128,6 +149,108 @@ final bridgeAvailable = const WebDrivePickerPlatform().isBridgeAvailable;
 
 The Drive page runs in an iframe. Messages are accepted only from that
 iframe's window and only from the intent origin.
+
+### 2. Embeddable widget (as Chat)
+
+`DriveIntentWebView` is the picker without a dialog: it fills the space its
+parent gives it and reports through callbacks, so you wrap it in your own
+bottom sheet or route. `DriveIntentWebViewModal` is this view inside the
+dialog.
+
+```dart
+showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  builder: (sheetContext) => SizedBox(
+    height: MediaQuery.sizeOf(context).height * 0.9,
+    child: DriveIntentWebView(
+      intentLoader: () => createIntent(filePickerConfig), // your SSO + intent
+      filePickerConfig: filePickerConfig,
+      onResult: (outcome) {
+        switch (outcome) {
+          case DrivePickOutcomePicked(:final documents): /* use documents */
+          case DrivePickOutcomeFailed(:final error): /* report */
+          case DrivePickOutcomeCancelled(): break;
+        }
+      },
+      onClose: () => Navigator.of(sheetContext).pop(),
+    ),
+  ),
+);
+```
+
+- `onResult` is called once with the outcome; `onClose` right after, for every
+  outcome, so the sheet is always dismissed. The view never pops a route.
+- `imageAssets`, `iconButtonBuilder` and `logger` are optional. Without
+  `imageAssets` the loading overlay is a spinner and the close button a
+  Material icon; give them to get the Drive skeleton and your own buttons.
+- The theme (light / dark) is part of `filePickerConfig`.
+- `platform` can be passed to replace the compiled-in one (tests).
+
+### 3. Headless core
+
+Use `core.dart` when you run the Drive page yourself. Exchange the token,
+create the intent, open `intent.intentUrl` in your own WebView, and turn what
+the page posts into a `DrivePickOutcome`:
+
+```dart
+import 'package:twake_drive_picker/core.dart';
+
+final config = WorkplaceConfig(dio: appDio); // your Dio; optional
+final executor = WorkplaceRequestExecutor(config: config);
+final repository = WorkplaceRepositoryImpl(
+  WorkplaceDataSourceImpl(executor: executor, config: config),
+  WorkplaceDriveDataSourceImpl(executor: executor),
+);
+final runner = WorkplaceAccessModeRunner(
+  exchangeTokenInteractor: ExchangeDriveTokenInteractor(repository),
+  oidcTokenGetter: () => session.oidcIdToken,      // your SSO
+  oidcRefreshTrigger: () => session.refreshIdToken, // your SSO
+);
+
+final platformUrl = Uri.https(workplaceFqdn);
+final intent = await runner.run(
+  platformUrl,
+  CreateDriveIntentCall(
+    CreateDriveIntentInteractor(repository),
+    platformUrl,
+    const WorkplaceIntentConfig(
+      addAsLink: WorkplaceActionConfig(label: 'Add as link'),
+      theme: WorkplaceTheme.light,
+    ),
+  ),
+);
+
+// For each message the page posts (origin: from the WebView, not the page):
+final outcome = drivePickOutcomeOfMessage(
+  WorkplaceIntentMessage.parse(intent.intentId, raw),
+); // null while the handshake goes on
+```
+
+Check the sender origin against `tryGetUriOrigin(intent.intentUrl)` with a
+`DriveOriginValidator` before trusting a message. A complete, compiled version
+is in [`example/lib/headless_example.dart`](example/lib/headless_example.dart)
+and is exercised by `test/headless_flow_test.dart`.
+
+### Optional picker options
+
+Drive reads these from the picker config. Every one is optional; when unset it
+is left out of the request and Drive keeps its default, so nothing changes for
+existing callers.
+
+| Where | Option | Drive default |
+|---|---|---|
+| `WorkplaceIntentConfig` / `WorkplaceFilePickerConfigRequest` | `multiple` | `true` |
+| | `defaultDirId` | root |
+| | `restrictToDefaultDir` | `false` |
+| | `tabs` (`drive`, `recents`, `sharings`) | all three |
+| `WorkplaceActionConfig` / `WorkplaceActionConfigRequest` | `allowFolder` | links yes, attachments no |
+| | `accept` (`file`, `folder`, mime patterns such as `image/*`) | any |
+| | `maxFileCount` | no limit |
+
+These keys are read by the Drive app (`linagora/twake-drive`,
+`FilePicker/config.js` and `constraints.js`); they are not in the public
+cozy-stack intents documentation, so check the Drive version you deploy against.
 
 ## Configuration
 

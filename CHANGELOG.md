@@ -28,6 +28,23 @@ First release under the name `twake_drive_picker` (it was
 
 ### Added
 
+- `core.dart` (UI-free: no widget, WebView or browser import) and `ui.dart`;
+  `twake_drive_picker.dart` exports both and keeps the same surface.
+  `CozyBridgeTransport` is the interface the data layer uses for the cozy
+  bridge; `WorkplaceRequestExecutor` and `WorkplaceAccessModeRunner` take it as
+  `bridge:` (they took a `platform:` earlier in this unreleased version).
+- `DriveIntentWebView`: the picker without a dialog, for hosts that bring their
+  own sheet or route. It reports through `onResult` / `onClose`; `imageAssets`
+  is optional. The existing modal is this view inside the dialog.
+- `drivePickOutcomeOfMessage`: maps a Drive page message to a
+  `DrivePickOutcome` for headless hosts.
+- Optional picker options Drive supports: `multiple`, `defaultDirId`,
+  `restrictToDefaultDir`, `tabs` (`WorkplaceFilePickerTab`) and, per action,
+  `allowFolder`, `accept`, `maxFileCount`. Unset means omitted from the request.
+- Headless usage example (`example/lib/headless_example.dart`) and README
+  sections for the three usage modes.
+- A test that locks the export surface of `twake_drive_picker.dart`.
+
 - `DrivePickerPlatform` with `MobileDrivePickerPlatform`
   (`flutter_inappwebview`) and `WebDrivePickerPlatform` (iframe, `postMessage`,
   cozy bridge), selected by a conditional import.
