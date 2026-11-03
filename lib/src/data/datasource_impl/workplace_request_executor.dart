@@ -2,7 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../../entity/workplace_access_mode.dart';
 import '../../entity/workplace_request_context.dart';
-import '../../platform/drive_picker_platform.dart';
+import '../../bridge/cozy_bridge_transport.dart';
+import '../../bridge/default_cozy_bridge_transport.dart' as default_transport;
 import '../../model/workplace_request_body.dart';
 import '../../model/workplace_request_route.dart';
 import '../../model/workplace_request_transfer.dart';
@@ -15,16 +16,16 @@ export '../../model/workplace_request_transfer.dart';
 
 /// Sends one cozy-stack request over whichever access mode was resolved.
 class WorkplaceRequestExecutor {
-  /// [config] carries the Dio used for bearer requests; [platform] the bridge
-  /// used for bridge requests. Both default to the app's own.
+  /// [config] carries the Dio used for bearer requests; [bridge] the cozy
+  /// external bridge used for bridge requests. Both default to the app's own.
   WorkplaceRequestExecutor({
     WorkplaceConfig? config,
-    DrivePickerPlatform? platform,
+    CozyBridgeTransport? bridge,
   }) : _config = config ?? WorkplaceConfig(),
-       _platform = platform ?? DrivePickerPlatform.current;
+       _bridge = bridge ?? default_transport.createDefaultCozyBridgeTransport();
 
   final WorkplaceConfig _config;
-  final DrivePickerPlatform _platform;
+  final CozyBridgeTransport _bridge;
 
   Future<dynamic> send({
     required WorkplaceRequestContext context,
@@ -34,7 +35,7 @@ class WorkplaceRequestExecutor {
   }) async {
     return switch (context.accessMode) {
       // The bridge resolves once: no extra, no progress, no cancellation.
-      BridgeAccessMode() => _platform.fetchJson(
+      BridgeAccessMode() => _bridge.fetchJson(
         method: route.method,
         path: _bridgePath(route),
         body: body.data,

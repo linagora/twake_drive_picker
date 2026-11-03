@@ -14,7 +14,8 @@ void main() {
   );
   const conditionalSelectors = {
     'lib/src/platform/default_platform.dart',
-    'lib/twake_drive_picker.dart',
+    'lib/src/bridge/default_cozy_bridge_transport.dart',
+    'lib/ui.dart',
   };
 
   List<File> dartFiles(String root) => Directory(root)
@@ -66,5 +67,49 @@ void main() {
       final source = File(path).readAsStringSync();
       expect(source, contains('dart.library.html'), reason: path);
     }
+  });
+
+  test('core.dart reaches no widget, WebView or UI file', () {
+    final forbiddenCore = RegExp(
+      r'''(package:flutter/|flutter_inappwebview|pointer_interceptor|universal_html|src/presentation/|src/platform/(?!web/(default_cozy_bridge_transport_web|web_cozy_bridge_transport|cozy_bridge_web)\.dart)|src/l10n/)''',
+    );
+    final directive = RegExp(
+      r'''(?:import|export)\s+'([^']+)';?|'([^']+\.dart)';''',
+    );
+    final visited = <String>{};
+    final offenders = <String>[];
+
+    void visit(String path) {
+      if (!visited.add(path)) return;
+      final file = File(path);
+      if (!file.existsSync()) return;
+      for (final line in file.readAsLinesSync()) {
+        final isDirective =
+            line.startsWith('import ') ||
+            line.startsWith('export ') ||
+            line.trimLeft().startsWith('if (dart.library');
+        if (!isDirective) continue;
+        final uri = directive.firstMatch(line);
+        final target = uri?.group(1) ?? uri?.group(2);
+        if (target == null) continue;
+        if (forbiddenCore.hasMatch(target)) {
+          offenders.add('$path -> $target');
+          continue;
+        }
+        if (target.startsWith('dart:') ||
+            (target.startsWith('package:') &&
+                !target.startsWith('package:twake_drive_picker/'))) {
+          continue;
+        }
+        final resolved = target.startsWith('package:twake_drive_picker/')
+            ? 'lib/${target.substring('package:twake_drive_picker/'.length)}'
+            : File(path).parent.uri.resolve(target).toFilePath();
+        visit(resolved.replaceFirst('${Directory.current.path}/', ''));
+      }
+    }
+
+    visit('lib/core.dart');
+    expect(visited.length, greaterThan(40));
+    expect(offenders, isEmpty);
   });
 }
