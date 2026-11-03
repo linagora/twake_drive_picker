@@ -155,6 +155,17 @@ void main() {
     expect(functions, hasLength(7));
   });
 
+  test('barrel also exports what 0.2.0 adds', () {
+    final added = <Object>[
+      CozyBridgeTransport,
+      UnsupportedCozyBridgeTransport,
+      DriveIntentWebView,
+      WorkplaceFilePickerTab,
+      drivePickOutcomeOfMessage,
+    ];
+    expect(added, hasLength(5));
+  });
+
   test('barrel exports the global logger hook', () {
     expect(activeWorkplaceLogger, isA<WorkplaceLogger>());
   });

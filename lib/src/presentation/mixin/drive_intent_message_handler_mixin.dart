@@ -226,13 +226,8 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// A `done` that yields no usable document is never a successful pick:
-  /// nothing selected is a cancel, everything rejected is a failure.
-  DrivePickOutcome _outcomeOfDone(WorkplaceIntentDoneMessage msg) {
-    if (msg.documents.isNotEmpty) return DrivePickOutcomePicked(msg.documents);
-    if (msg.skippedCount == 0) return const DrivePickOutcomeCancelled();
-    return DrivePickOutcomeFailed(DriveIntentNoValidDocumentException());
-  }
+  DrivePickOutcome _outcomeOfDone(WorkplaceIntentDoneMessage msg) =>
+      drivePickOutcomeOfMessage(msg)!;
 
   /// Whether finishing pops the enclosing route with the outcome (the dialog).
   /// An embedded view reports through its callbacks instead and leaves the
