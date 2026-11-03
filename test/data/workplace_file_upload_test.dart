@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_drive_datasource_impl.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_executor.dart';
 import 'package:twake_drive_picker/src/model/workplace_file_response.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 import 'package:twake_drive_picker/src/entity/workplace_upload_file_spec.dart';
 import 'package:twake_drive_picker/src/entity/workplace_upload_source.dart';
@@ -39,7 +39,7 @@ class _FakeUploadSource implements WorkplaceUploadSource {
   final Map<String, dynamic> dioExtra;
 
   _FakeUploadSource({Object? Function()? open, this.dioExtra = const {}})
-      : _open = open ?? (() => 'bytes');
+    : _open = open ?? (() => 'bytes');
 
   @override
   Object? get requestData {
@@ -70,7 +70,10 @@ class _QueueAdapter implements HttpClientAdapter {
       );
     }
     if (item is _Cancelled) {
-      throw DioException(requestOptions: options, type: DioExceptionType.cancel);
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.cancel,
+      );
     }
     if (item is int) {
       throw DioException(
@@ -133,7 +136,7 @@ Future<String?> _retriedName(
       'data': {'id': 'file-1'},
     },
   ]);
-  WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+  testDio.httpClientAdapter = adapter;
   await datasource.uploadFile(
     context: context,
     spec: WorkplaceUploadFileSpec(
@@ -148,7 +151,6 @@ Future<String?> _retriedName(
 
 void main() {
   late WorkplaceDriveDataSourceImpl datasource;
-  late Dio originalDio;
   final context = WorkplaceRequestContext(
     platformUrl: Uri.parse('https://platform.example.com'),
     accessMode: const BearerTokenAccessMode('test-token'),
@@ -168,80 +170,101 @@ void main() {
   };
 
   setUp(() {
-    datasource = WorkplaceDriveDataSourceImpl();
-    originalDio = WorkplaceDio.instance;
+    datasource = WorkplaceDriveDataSourceImpl(
+      executor: WorkplaceRequestExecutor(config: testConfig),
+    );
   });
 
-  tearDown(() => WorkplaceDio.setInstance(originalDio));
-
   group('WorkplaceDriveDataSourceImpl::uploadFile::', () {
-    test('sends Type/Name query params, the magic-folder dir-id in the path, and the mimeType/size headers', () async {
-      final adapter = _QueueAdapter([fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'sends Type/Name query params, the magic-folder dir-id in the path, and the mimeType/size headers',
+      () async {
+        final adapter = _QueueAdapter([fileResponse]);
+        testDio.httpClientAdapter = adapter;
 
-      final result = await datasource.uploadFile(context: context, spec: spec);
+        final result = await datasource.uploadFile(
+          context: context,
+          spec: spec,
+        );
 
-      final options = adapter.capturedOptions.single;
-      expect(options.uri.queryParameters['Type'], equals('file'));
-      expect(options.uri.queryParameters['Name'], equals('report.pdf'));
-      expect(options.uri.queryParameters.containsKey('MagicFolder'), isFalse);
-      expect(options.uri.path, equals('/files/io.cozy.apps%2Fmail'));
-      expect(options.headers['Content-Type'], equals('application/pdf'));
-      // Content-Length isn't asserted here: Dio recomputes it from the
-      // serialized body for a String payload, overriding our explicit header
-      // (which only matters in production for a Stream body Dio can't size).
-      expect(result.fileId, equals('file-1'));
-      expect(result.name, equals('report.pdf'));
-    });
+        final options = adapter.capturedOptions.single;
+        expect(options.uri.queryParameters['Type'], equals('file'));
+        expect(options.uri.queryParameters['Name'], equals('report.pdf'));
+        expect(options.uri.queryParameters.containsKey('MagicFolder'), isFalse);
+        expect(options.uri.path, equals('/files/io.cozy.apps%2Fmail'));
+        expect(options.headers['Content-Type'], equals('application/pdf'));
+        // Content-Length isn't asserted here: Dio recomputes it from the
+        // serialized body for a String payload, overriding our explicit header
+        // (which only matters in production for a Stream body Dio can't size).
+        expect(result.fileId, equals('file-1'));
+        expect(result.name, equals('report.pdf'));
+      },
+    );
 
-    test('sends the spec size as Content-Length for a streamed body Dio cannot size', () async {
-      final adapter = _QueueAdapter([fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
-      final streamSpec = WorkplaceUploadFileSpec(
-        fileName: 'report.pdf',
-        mimeType: 'application/pdf',
-        fileSize: 1234,
-        source: _FakeUploadSource(
-          open: () => Stream<List<int>>.fromIterable([
-            [1, 2, 3],
-          ]),
-        ),
-      );
+    test(
+      'sends the spec size as Content-Length for a streamed body Dio cannot size',
+      () async {
+        final adapter = _QueueAdapter([fileResponse]);
+        testDio.httpClientAdapter = adapter;
+        final streamSpec = WorkplaceUploadFileSpec(
+          fileName: 'report.pdf',
+          mimeType: 'application/pdf',
+          fileSize: 1234,
+          source: _FakeUploadSource(
+            open: () => Stream<List<int>>.fromIterable([
+              [1, 2, 3],
+            ]),
+          ),
+        );
 
-      await datasource.uploadFile(context: context, spec: streamSpec);
+        await datasource.uploadFile(context: context, spec: streamSpec);
 
-      expect(
-        adapter.capturedOptions.single.headers[Headers.contentLengthHeader],
-        equals('1234'),
-      );
-    });
+        expect(
+          adapter.capturedOptions.single.headers[Headers.contentLengthHeader],
+          equals('1234'),
+        );
+      },
+    );
 
-    test('sends force_session_id=true so cozy-stack accepts the bearer-only request', () async {
-      final adapter = _QueueAdapter([fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'sends force_session_id=true so cozy-stack accepts the bearer-only request',
+      () async {
+        final adapter = _QueueAdapter([fileResponse]);
+        testDio.httpClientAdapter = adapter;
 
-      await datasource.uploadFile(context: context, spec: spec);
+        await datasource.uploadFile(context: context, spec: spec);
 
-      expect(
-        adapter.capturedOptions.single.uri.queryParameters['force_session_id'],
-        equals('true'),
-      );
-    });
+        expect(
+          adapter
+              .capturedOptions
+              .single
+              .uri
+              .queryParameters['force_session_id'],
+          equals('true'),
+        );
+      },
+    );
 
     test('retries with a suffixed name on a 409 name conflict', () async {
       final adapter = _QueueAdapter([409, fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.uploadFile(context: context, spec: spec);
 
       expect(adapter.capturedOptions, hasLength(2));
-      expect(adapter.capturedOptions[0].uri.queryParameters['Name'], equals('report.pdf'));
-      expect(adapter.capturedOptions[1].uri.queryParameters['Name'], equals('report (1).pdf'));
+      expect(
+        adapter.capturedOptions[0].uri.queryParameters['Name'],
+        equals('report.pdf'),
+      );
+      expect(
+        adapter.capturedOptions[1].uri.queryParameters['Name'],
+        equals('report (1).pdf'),
+      );
     });
 
     test('keeps incrementing the suffix while the name is taken', () async {
       final adapter = _QueueAdapter([409, 409, fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await datasource.uploadFile(context: context, spec: spec);
 
@@ -251,34 +274,49 @@ void main() {
       );
     });
 
-    test('uploads under a timestamp name once ten numbered names are taken', () async {
-      final adapter = _QueueAdapter([...List.filled(10, 409), fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'uploads under a timestamp name once ten numbered names are taken',
+      () async {
+        final adapter = _QueueAdapter([...List.filled(10, 409), fileResponse]);
+        testDio.httpClientAdapter = adapter;
 
-      await datasource.uploadFile(context: context, spec: spec);
+        await datasource.uploadFile(context: context, spec: spec);
 
-      expect(adapter.capturedOptions, hasLength(11));
-      expect(adapter.capturedOptions[9].uri.queryParameters['Name'], equals('report (9).pdf'));
-      expect(
-        adapter.capturedOptions.last.uri.queryParameters['Name'],
-        matches(RegExp(r'^report \(\d{13,}\)\.pdf$')),
-      );
-    });
+        expect(adapter.capturedOptions, hasLength(11));
+        expect(
+          adapter.capturedOptions[9].uri.queryParameters['Name'],
+          equals('report (9).pdf'),
+        );
+        expect(
+          adapter.capturedOptions.last.uri.queryParameters['Name'],
+          matches(RegExp(r'^report \(\d{13,}\)\.pdf$')),
+        );
+      },
+    );
 
-    test('rethrows the 409 when the timestamp name is taken too, after 11 sends', () async {
-      final adapter = _QueueAdapter(List.filled(11, 409));
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'rethrows the 409 when the timestamp name is taken too, after 11 sends',
+      () async {
+        final adapter = _QueueAdapter(List.filled(11, 409));
+        testDio.httpClientAdapter = adapter;
 
-      await expectLater(
-        datasource.uploadFile(context: context, spec: spec),
-        throwsA(isA<DioException>().having((e) => e.response?.statusCode, 'status', 409)),
-      );
-      expect(adapter.capturedOptions, hasLength(11));
-    });
+        await expectLater(
+          datasource.uploadFile(context: context, spec: spec),
+          throwsA(
+            isA<DioException>().having(
+              (e) => e.response?.statusCode,
+              'status',
+              409,
+            ),
+          ),
+        );
+        expect(adapter.capturedOptions, hasLength(11));
+      },
+    );
 
     test('reads a fresh body for the 409 retry', () async {
       final adapter = _QueueAdapter([409, fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final source = _FakeUploadSource(
         open: () => Stream<List<int>>.fromIterable([
           [1, 2, 3],
@@ -300,7 +338,7 @@ void main() {
 
     test('suffixes an extension-less name by appending (1)', () async {
       final adapter = _QueueAdapter([409, fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
       final noExtSpec = WorkplaceUploadFileSpec(
         fileName: 'report',
         mimeType: 'application/pdf',
@@ -310,11 +348,17 @@ void main() {
 
       await datasource.uploadFile(context: context, spec: noExtSpec);
 
-      expect(adapter.capturedOptions[1].uri.queryParameters['Name'], equals('report (1)'));
+      expect(
+        adapter.capturedOptions[1].uri.queryParameters['Name'],
+        equals('report (1)'),
+      );
     });
 
     test('suffixes a dot-leading name like an extension-less one', () async {
-      expect(await _retriedName(datasource, context, '.env'), equals('.env (1)'));
+      expect(
+        await _retriedName(datasource, context, '.env'),
+        equals('.env (1)'),
+      );
     });
 
     test('suffixes a multi-dot name before its last extension only', () async {
@@ -326,7 +370,7 @@ void main() {
 
     test('rethrows a non-409 failure without retrying', () async {
       final adapter = _QueueAdapter([500]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.uploadFile(context: context, spec: spec),
@@ -337,37 +381,45 @@ void main() {
 
     test('rethrows a failure without a response without retrying', () async {
       final adapter = _QueueAdapter([_connectionError]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.uploadFile(context: context, spec: spec),
-        throwsA(isA<DioException>().having(
-          (exception) => exception.type,
-          'type',
-          DioExceptionType.connectionError,
-        )),
+        throwsA(
+          isA<DioException>().having(
+            (exception) => exception.type,
+            'type',
+            DioExceptionType.connectionError,
+          ),
+        ),
       );
       expect(adapter.capturedOptions, hasLength(1));
     });
 
-    test('throws WorkplaceUploadCancelledException on a cancel without retrying', () async {
-      final adapter = _QueueAdapter([const _Cancelled()]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'throws WorkplaceUploadCancelledException on a cancel without retrying',
+      () async {
+        final adapter = _QueueAdapter([const _Cancelled()]);
+        testDio.httpClientAdapter = adapter;
 
-      await expectLater(
-        datasource.uploadFile(context: context, spec: spec),
-        throwsA(isA<WorkplaceUploadCancelledException>()),
-      );
-      expect(adapter.capturedOptions, hasLength(1));
-    });
+        await expectLater(
+          datasource.uploadFile(context: context, spec: spec),
+          throwsA(isA<WorkplaceUploadCancelledException>()),
+        );
+        expect(adapter.capturedOptions, hasLength(1));
+      },
+    );
 
     test('throws StateError when the response carries no file id', () async {
       final adapter = _QueueAdapter([
         {
-          'data': {'id': '', 'attributes': {'name': 'x'}},
+          'data': {
+            'id': '',
+            'attributes': {'name': 'x'},
+          },
         },
       ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+      testDio.httpClientAdapter = adapter;
 
       await expectLater(
         datasource.uploadFile(context: context, spec: spec),
@@ -375,100 +427,130 @@ void main() {
       );
     });
 
-    test('falls back to the sent name when the response carries no attributes', () async {
-      final adapter = _QueueAdapter([
-        {
-          'data': {'id': 'file-1'},
-        },
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'falls back to the sent name when the response carries no attributes',
+      () async {
+        final adapter = _QueueAdapter([
+          {
+            'data': {'id': 'file-1'},
+          },
+        ]);
+        testDio.httpClientAdapter = adapter;
 
-      final result = await datasource.uploadFile(context: context, spec: spec);
+        final result = await datasource.uploadFile(
+          context: context,
+          spec: spec,
+        );
 
-      expect(result.fileId, equals('file-1'));
-      expect(result.name, equals('report.pdf'));
-    });
+        expect(result.fileId, equals('file-1'));
+        expect(result.name, equals('report.pdf'));
+      },
+    );
 
-    test('falls back to the suffixed name it sent when a retried response has no name', () async {
-      final adapter = _QueueAdapter([
-        409,
-        {
-          'data': {'id': 'file-1'},
-        },
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'falls back to the suffixed name it sent when a retried response has no name',
+      () async {
+        final adapter = _QueueAdapter([
+          409,
+          {
+            'data': {'id': 'file-1'},
+          },
+        ]);
+        testDio.httpClientAdapter = adapter;
 
-      final result = await datasource.uploadFile(context: context, spec: spec);
+        final result = await datasource.uploadFile(
+          context: context,
+          spec: spec,
+        );
 
-      expect(result.name, equals('report (1).pdf'));
-    });
+        expect(result.name, equals('report (1).pdf'));
+      },
+    );
 
-    test('parses a JSON object the stack returns as a plain-text string', () async {
-      final adapter = _QueueAdapter([
-        _RawResponse(jsonEncode(fileResponse), 'text/plain'),
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'parses a JSON object the stack returns as a plain-text string',
+      () async {
+        final adapter = _QueueAdapter([
+          _RawResponse(jsonEncode(fileResponse), 'text/plain'),
+        ]);
+        testDio.httpClientAdapter = adapter;
 
-      final result = await datasource.uploadFile(context: context, spec: spec);
+        final result = await datasource.uploadFile(
+          context: context,
+          spec: spec,
+        );
 
-      expect(result.fileId, equals('file-1'));
-      expect(result.name, equals('report.pdf'));
-    });
+        expect(result.fileId, equals('file-1'));
+        expect(result.name, equals('report.pdf'));
+      },
+    );
 
-    test('throws FormatException when the response is not a JSON object', () async {
-      final adapter = _QueueAdapter([
-        const _RawResponse('[]', 'application/json'),
-      ]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    test(
+      'throws FormatException when the response is not a JSON object',
+      () async {
+        final adapter = _QueueAdapter([
+          const _RawResponse('[]', 'application/json'),
+        ]);
+        testDio.httpClientAdapter = adapter;
 
-      await expectLater(
-        datasource.uploadFile(context: context, spec: spec),
-        throwsA(isA<FormatException>()),
-      );
-    });
+        await expectLater(
+          datasource.uploadFile(context: context, spec: spec),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
 
-    test('forwards the source extra verbatim so the web blob adapter sees it', () async {
-      final adapter = _QueueAdapter([fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
-      final blobSpec = WorkplaceUploadFileSpec(
-        fileName: 'report.pdf',
-        mimeType: 'application/pdf',
-        fileSize: 1234,
-        source: _FakeUploadSource(dioExtra: {
-          'upload-attachment': {'sourceUrl': 'blob:x'},
-        }),
-      );
+    test(
+      'forwards the source extra verbatim so the web blob adapter sees it',
+      () async {
+        final adapter = _QueueAdapter([fileResponse]);
+        testDio.httpClientAdapter = adapter;
+        final blobSpec = WorkplaceUploadFileSpec(
+          fileName: 'report.pdf',
+          mimeType: 'application/pdf',
+          fileSize: 1234,
+          source: _FakeUploadSource(
+            dioExtra: {
+              'upload-attachment': {'sourceUrl': 'blob:x'},
+            },
+          ),
+        );
 
-      await datasource.uploadFile(context: context, spec: blobSpec);
+        await datasource.uploadFile(context: context, spec: blobSpec);
 
-      final uploadExtra =
-          adapter.capturedOptions.single.extra['upload-attachment'] as Map;
-      expect(uploadExtra['sourceUrl'], equals('blob:x'));
-    });
+        final uploadExtra =
+            adapter.capturedOptions.single.extra['upload-attachment'] as Map;
+        expect(uploadExtra['sourceUrl'], equals('blob:x'));
+      },
+    );
 
-    test('applies the transfer timeout, which defaults to the Dio instance', () async {
-      final adapter = _QueueAdapter([fileResponse, fileResponse]);
-      WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
-      const timeout = Duration(minutes: 30);
+    test(
+      'applies the transfer timeout, which defaults to the Dio instance',
+      () async {
+        final adapter = _QueueAdapter([fileResponse, fileResponse]);
+        testDio.httpClientAdapter = adapter;
+        const timeout = Duration(minutes: 30);
 
-      await datasource.uploadFile(
-        context: context,
-        spec: spec,
-        transfer: const WorkplaceUploadTransfer(timeout: timeout),
-      );
-      await datasource.uploadFile(context: context, spec: spec);
+        await datasource.uploadFile(
+          context: context,
+          spec: spec,
+          transfer: const WorkplaceUploadTransfer(timeout: timeout),
+        );
+        await datasource.uploadFile(context: context, spec: spec);
 
-      expect(adapter.capturedOptions[0].sendTimeout, equals(timeout));
-      expect(adapter.capturedOptions[0].receiveTimeout, equals(timeout));
-      expect(adapter.capturedOptions[1].sendTimeout, isNull);
-      expect(adapter.capturedOptions[1].receiveTimeout, isNull);
-    });
+        expect(adapter.capturedOptions[0].sendTimeout, equals(timeout));
+        expect(adapter.capturedOptions[0].receiveTimeout, equals(timeout));
+        expect(adapter.capturedOptions[1].sendTimeout, isNull);
+        expect(adapter.capturedOptions[1].receiveTimeout, isNull);
+      },
+    );
 
     test('sends the upload through the injected executor', () async {
       final executor = _RecordingExecutor();
 
-      await WorkplaceDriveDataSourceImpl(executor: executor)
-          .uploadFile(context: context, spec: spec);
+      await WorkplaceDriveDataSourceImpl(
+        executor: executor,
+      ).uploadFile(context: context, spec: spec);
 
       final route = executor.routes.single;
       expect(route.method, equals('POST'));
@@ -517,8 +599,9 @@ void main() {
     test('sends no cancel token without a cancel signal', () async {
       final executor = _RecordingExecutor();
 
-      await WorkplaceDriveDataSourceImpl(executor: executor)
-          .uploadFile(context: context, spec: spec);
+      await WorkplaceDriveDataSourceImpl(
+        executor: executor,
+      ).uploadFile(context: context, spec: spec);
 
       expect(executor.transfers.single.cancelToken, isNull);
     });

@@ -43,23 +43,35 @@ void main() {
   );
 
   CreateDriveIntentCall makeCall(_FakeRepository repository) =>
-      CreateDriveIntentCall(CreateDriveIntentInteractor(repository), platformUrl, config);
+      CreateDriveIntentCall(
+        CreateDriveIntentInteractor(repository),
+        platformUrl,
+        config,
+      );
 
   group('CreateDriveIntentCall::', () {
     test('replays over bearer token after a bridge failure', () {
-      expect(makeCall(_FakeRepository(intent)).bridgePolicy, BridgePolicy.bearerReplay);
+      expect(
+        makeCall(_FakeRepository(intent)).bridgePolicy,
+        BridgePolicy.bearerReplay,
+      );
     });
 
-    test('returns the created intent and forwards the access mode and config', () async {
-      final repository = _FakeRepository(intent);
+    test(
+      'returns the created intent and forwards the access mode and config',
+      () async {
+        final repository = _FakeRepository(intent);
 
-      final result = await makeCall(repository).call(const BridgeAccessMode());
+        final result = await makeCall(
+          repository,
+        ).call(const BridgeAccessMode());
 
-      expect(result, equals(intent));
-      expect(repository.receivedUrl, equals(platformUrl));
-      expect(repository.receivedMode, isA<BridgeAccessMode>());
-      expect(repository.receivedConfig, equals(config));
-    });
+        expect(result, equals(intent));
+        expect(repository.receivedUrl, equals(platformUrl));
+        expect(repository.receivedMode, isA<BridgeAccessMode>());
+        expect(repository.receivedConfig, equals(config));
+      },
+    );
 
     test('rethrows the repository failure unchanged', () async {
       final error = StateError('boom');

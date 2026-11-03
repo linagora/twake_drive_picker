@@ -36,7 +36,12 @@ class _RecordingRepository extends Fake implements WorkplaceRepository {
   WorkplaceRequestContext? linkContext;
   String? linkFileId;
 
-  _RecordingRepository({this.uploadError, this.linkError, this.onUploaded, this.onLinkRequested});
+  _RecordingRepository({
+    this.uploadError,
+    this.linkError,
+    this.onUploaded,
+    this.onLinkRequested,
+  });
 
   @override
   Future<DriveUploadedFile> uploadFile({
@@ -79,32 +84,43 @@ void main() {
     source: _StubUploadSource(),
   );
 
-  Future<void> expectCancelled(_RecordingRepository repository, Future<void> cancelSignal) {
+  Future<void> expectCancelled(
+    _RecordingRepository repository,
+    Future<void> cancelSignal,
+  ) {
     return expectLater(
-      UploadDriveFileInteractor(repository)
-          .execute(context: context, spec: spec, cancelSignal: cancelSignal),
+      UploadDriveFileInteractor(
+        repository,
+      ).execute(context: context, spec: spec, cancelSignal: cancelSignal),
       throwsA(isA<WorkplaceUploadCancelledException>()),
     );
   }
 
   group('UploadDriveFileInteractor::execute::', () {
-    test('uploads with the long timeout and the cancel signal, then links the uploaded file', () async {
-      final repository = _RecordingRepository();
-      final cancelSignal = Completer<void>().future;
+    test(
+      'uploads with the long timeout and the cancel signal, then links the uploaded file',
+      () async {
+        final repository = _RecordingRepository();
+        final cancelSignal = Completer<void>().future;
 
-      final shared = await UploadDriveFileInteractor(repository).execute(
-        context: context,
-        spec: spec,
-        cancelSignal: cancelSignal,
-      );
+        final shared = await UploadDriveFileInteractor(
+          repository,
+        ).execute(context: context, spec: spec, cancelSignal: cancelSignal);
 
-      expect(repository.uploadTransfer?.timeout, equals(const Duration(minutes: 30)));
-      expect(repository.uploadTransfer?.cancelSignal, same(cancelSignal));
-      expect(repository.linkContext, same(context));
-      expect(repository.linkFileId, equals('file-1'));
-      expect(shared.link.toString(), equals('https://user-drive.example.com/public?sharecode=abc123'));
-      expect(shared.name, equals('report (1).pdf'));
-    });
+        expect(
+          repository.uploadTransfer?.timeout,
+          equals(const Duration(minutes: 30)),
+        );
+        expect(repository.uploadTransfer?.cancelSignal, same(cancelSignal));
+        expect(repository.linkContext, same(context));
+        expect(repository.linkFileId, equals('file-1'));
+        expect(
+          shared.link.toString(),
+          equals('https://user-drive.example.com/public?sharecode=abc123'),
+        );
+        expect(shared.name, equals('report (1).pdf'));
+      },
+    );
 
     test('forwards upload progress to onProgress', () async {
       final repository = _RecordingRepository();
@@ -117,22 +133,33 @@ void main() {
       );
       repository.uploadTransfer?.onProgress?.call(512, 1234);
 
-      expect(progress, equals([[512, 1234]]));
+      expect(
+        progress,
+        equals([
+          [512, 1234],
+        ]),
+      );
     });
 
     test('sends no progress callback when onProgress is null', () async {
       final repository = _RecordingRepository();
 
-      await UploadDriveFileInteractor(repository).execute(context: context, spec: spec);
+      await UploadDriveFileInteractor(
+        repository,
+      ).execute(context: context, spec: spec);
 
       expect(repository.uploadTransfer?.onProgress, isNull);
     });
 
     test('does not mint a link when the upload fails', () async {
-      final repository = _RecordingRepository(uploadError: StateError('upload failed'));
+      final repository = _RecordingRepository(
+        uploadError: StateError('upload failed'),
+      );
 
       await expectLater(
-        UploadDriveFileInteractor(repository).execute(context: context, spec: spec),
+        UploadDriveFileInteractor(
+          repository,
+        ).execute(context: context, spec: spec),
         throwsA(isA<StateError>()),
       );
       expect(repository.linkFileId, isNull);
@@ -141,34 +168,43 @@ void main() {
     test('uploads with the caller context and spec', () async {
       final repository = _RecordingRepository();
 
-      await UploadDriveFileInteractor(repository).execute(context: context, spec: spec);
+      await UploadDriveFileInteractor(
+        repository,
+      ).execute(context: context, spec: spec);
 
       expect(repository.uploadContext, same(context));
       expect(repository.uploadSpec, same(spec));
     });
 
     test('surfaces the share link failure after a successful upload', () async {
-      final repository = _RecordingRepository(linkError: StateError('link failed'));
+      final repository = _RecordingRepository(
+        linkError: StateError('link failed'),
+      );
 
       await expectLater(
-        UploadDriveFileInteractor(repository).execute(context: context, spec: spec),
+        UploadDriveFileInteractor(
+          repository,
+        ).execute(context: context, spec: spec),
         throwsA(isA<StateError>()),
       );
       expect(repository.uploadSpec, same(spec));
       expect(repository.linkFileId, equals('file-1'));
     });
 
-    test('does not mint a link when cancelled after the upload succeeded', () async {
-      final cancel = Completer<void>();
-      final repository = _RecordingRepository(onUploaded: cancel.complete);
+    test(
+      'does not mint a link when cancelled after the upload succeeded',
+      () async {
+        final cancel = Completer<void>();
+        final repository = _RecordingRepository(onUploaded: cancel.complete);
 
-      await UploadDriveFileInteractor(repository)
-          .execute(context: context, spec: spec, cancelSignal: cancel.future)
-          .catchError((_) => DriveSharedFile(name: '', link: Uri()));
+        await UploadDriveFileInteractor(repository)
+            .execute(context: context, spec: spec, cancelSignal: cancel.future)
+            .catchError((_) => DriveSharedFile(name: '', link: Uri()));
 
-      expect(repository.uploadSpec, same(spec));
-      expect(repository.linkFileId, isNull);
-    });
+        expect(repository.uploadSpec, same(spec));
+        expect(repository.linkFileId, isNull);
+      },
+    );
 
     test('drops the link when cancelled while it is minted', () async {
       final cancel = Completer<void>();
@@ -182,7 +218,10 @@ void main() {
     test('treats a failed cancel signal as a cancel', () async {
       final repository = _RecordingRepository();
 
-      await expectCancelled(repository, Future<void>.error(StateError('signal failed')));
+      await expectCancelled(
+        repository,
+        Future<void>.error(StateError('signal failed')),
+      );
 
       expect(repository.linkFileId, isNull);
     });

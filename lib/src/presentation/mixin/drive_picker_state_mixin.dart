@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/entity/workplace_theme.dart';
-import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
+import 'package:twake_drive_picker/src/l10n/drive_picker_localizations_resolver.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_pick_state.dart';
@@ -69,7 +69,7 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
           failingMessage: null,
         );
       }
-      final l10n = AppLocalizations.of(context)!;
+      final l10n = resolveDrivePickerLocalizations(context);
       // Captured up front: the caller may pop this context (e.g. a context
       // menu tile) before the intent future settles, disposing this state.
       failingMessage = l10n.attachFromDriveFailingMessage;
@@ -85,8 +85,8 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
             : WorkplaceActionConfigRequest(
                 label: addAsAttachmentTitle,
                 maxFileSize: snapshot.maxAttachmentSizeBytes,
-                // What is left after the composer's existing attachments, so
-                // the picker can't offer bytes the send guard would reject.
+                // What is left of the host's attachment budget, so the picker
+                // can't offer bytes the host would reject.
                 availableSize:
                     snapshot.remainingAttachmentCapacityBytes ??
                     snapshot.maxAttachmentSizeBytes,
@@ -155,8 +155,8 @@ mixin DrivePickerStateMixin<T extends StatefulWidget> on State<T> {
       case DrivePickOutcomePicked(:final documents):
         await _dispatch(DrivePickResult(documents));
       case DrivePickOutcomeFailed(:final error):
-        // Already reported to Sentry at the failing stage (modal mixin or the
-        // catch above) — only dispatch the UI failure callback here.
+        // Already logged at the failing stage (modal mixin or the catch
+        // above) — only dispatch the UI failure callback here.
         await _dispatch(DrivePickFailure(error, message: failingMessage));
       case DrivePickOutcomeCancelled():
       case null:

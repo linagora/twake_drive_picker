@@ -8,9 +8,10 @@ import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_ex
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 
 import '../test_utils/cozy_bridge_test_helper.dart';
+import '../test_utils/test_workplace_config.dart';
 
 void main() {
-  const executor = WorkplaceRequestExecutor();
+  final executor = WorkplaceRequestExecutor(config: testConfig);
   final context = WorkplaceRequestContext(
     platformUrl: Uri.parse('https://platform.example.com'),
     accessMode: const BridgeAccessMode(),
@@ -37,7 +38,10 @@ void main() {
 
       final decoded = captured!.dartify() as Map;
       expect(decoded['method'], equals('POST'));
-      expect(decoded['path'], equals('/files/io.cozy.apps%2Fmail?Type=file&Name=a+b.pdf'));
+      expect(
+        decoded['path'],
+        equals('/files/io.cozy.apps%2Fmail?Type=file&Name=a+b.pdf'),
+      );
       expect(decoded.containsKey('body'), isFalse);
       expect(decoded.containsKey('headers'), isFalse);
     });
@@ -71,7 +75,10 @@ void main() {
 
       await executor.send(
         context: context,
-        route: const WorkplaceRequestRoute(method: 'POST', pathSegments: ['permissions']),
+        route: const WorkplaceRequestRoute(
+          method: 'POST',
+          pathSegments: ['permissions'],
+        ),
         body: const WorkplaceRequestBody(
           data: {'a': 1},
           headers: {'Content-Type': 'application/json'},

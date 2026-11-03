@@ -13,7 +13,7 @@ typedef DriveFileProgressCallback = void Function(int count, int total);
 /// Returns the name Drive stored, which a name conflict may have suffixed.
 /// Throws [WorkplaceUploadCancelledException] once [cancelSignal] fires.
 class UploadDriveFileInteractor {
-  /// A streamed upload outlives `WorkplaceDio`'s default request timeouts.
+  /// A streamed upload outlives `WorkplaceConfig`'s default request timeouts.
   static const _uploadTimeout = Duration(minutes: 30);
 
   final WorkplaceRepository _repository;
@@ -28,19 +28,27 @@ class UploadDriveFileInteractor {
   }) async {
     var cancelled = false;
     // A failed signal cancels too, like the datasource's cancel token.
-    cancelSignal?.then((_) => cancelled = true, onError: (_) => cancelled = true);
+    cancelSignal?.then(
+      (_) => cancelled = true,
+      onError: (_) => cancelled = true,
+    );
     final uploaded = await _repository.uploadFile(
       context: context,
       spec: spec,
       transfer: WorkplaceUploadTransfer(
-        onProgress: onProgress == null ? null : (count, total) => onProgress(count, total),
+        onProgress: onProgress == null
+            ? null
+            : (count, total) => onProgress(count, total),
         cancelSignal: cancelSignal,
         timeout: _uploadTimeout,
       ),
     );
     // Cancelled after the upload landed: mint no public link.
     if (cancelled) throw WorkplaceUploadCancelledException();
-    final link = await _repository.createShareLink(context: context, fileId: uploaded.fileId);
+    final link = await _repository.createShareLink(
+      context: context,
+      fileId: uploaded.fileId,
+    );
     // Cancelled while minting: drop the link so it never reaches the mail.
     if (cancelled) throw WorkplaceUploadCancelledException();
     return DriveSharedFile(name: uploaded.name, link: link);

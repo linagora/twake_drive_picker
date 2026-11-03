@@ -9,7 +9,8 @@ import '../../domain/exceptions/workplace_exceptions.dart';
 import '../../domain/state/workplace_intent_state.dart';
 import '../../domain/usecase/exchange_drive_token_interactor.dart';
 import '../../domain/usecase/workplace_call.dart';
-import '../bridge/cozy_bridge.dart';
+import '../../bridge/cozy_bridge_transport.dart';
+import '../../bridge/default_cozy_bridge_transport.dart' as default_transport;
 
 /// Triggers the host app's OIDC refresh; returns the refreshed id token.
 typedef OidcRefreshTrigger = Future<String?> Function();
@@ -17,22 +18,33 @@ typedef OidcRefreshTrigger = Future<String?> Function();
 /// Runs one Workplace call over bridge or bearer token, resolved once so
 /// every request the call sends shares it: one exchange, plus one retry after an OIDC refresh.
 class WorkplaceAccessModeRunner {
+  /// [bridge] defaults to the app's own cozy bridge transport. [platform] is
+  /// its former name, kept so existing callers passing a `DrivePickerPlatform`
+  /// keep compiling; [bridge] wins when both are given.
   WorkplaceAccessModeRunner({
     required ExchangeDriveTokenInteractor exchangeTokenInteractor,
     required String? Function() oidcTokenGetter,
     required OidcRefreshTrigger oidcRefreshTrigger,
+    CozyBridgeTransport? bridge,
     bool Function()? isBridgeAvailable,
-  })  : _exchangeTokenInteractor = exchangeTokenInteractor,
-        _oidcTokenGetter = oidcTokenGetter,
-        _oidcRefreshTrigger = oidcRefreshTrigger,
-        _isBridgeAvailable = isBridgeAvailable ?? _cozyBridgeAvailable;
+    @Deprecated('Use bridge. A DrivePickerPlatform is a CozyBridgeTransport.')
+    CozyBridgeTransport? platform,
+  }) : _exchangeTokenInteractor = exchangeTokenInteractor,
+       _oidcTokenGetter = oidcTokenGetter,
+       _oidcRefreshTrigger = oidcRefreshTrigger,
+       _isBridgeAvailable =
+           isBridgeAvailable ?? _bridgeAvailable(bridge ?? platform);
 
   final ExchangeDriveTokenInteractor _exchangeTokenInteractor;
   final String? Function() _oidcTokenGetter;
   final OidcRefreshTrigger _oidcRefreshTrigger;
   final bool Function() _isBridgeAvailable;
 
-  static bool _cozyBridgeAvailable() => CozyBridge.isSupported && CozyBridge.isAvailable;
+  static bool Function() _bridgeAvailable(CozyBridgeTransport? bridge) => () {
+    final resolved =
+        bridge ?? default_transport.createDefaultCozyBridgeTransport();
+    return resolved.isBridgeSupported && resolved.isBridgeAvailable;
+  };
 
   Future<T> run<T>(Uri platformUrl, WorkplaceCall<T> workplaceCall) async {
     if (_canUseBridge(workplaceCall)) {
@@ -52,7 +64,9 @@ class WorkplaceAccessModeRunner {
     final oidcToken = _oidcTokenGetter();
     if (oidcToken == null) throw StateError('OIDC token is unavailable');
     final accessToken = await _exchangeAccessToken(platformUrl, oidcToken);
-    if (accessToken == null) throw StateError('Drive access token exchange failed');
+    if (accessToken == null) {
+      throw StateError('Drive access token exchange failed');
+    }
     return workplaceCall(BearerTokenAccessMode(accessToken));
   }
 
@@ -88,8 +102,9 @@ class WorkplaceAccessModeRunner {
     )) {
       either.fold(
         // reported by DriveIntentMessageHandlerMixin._failWith, the single funnel.
-        (failure) => caughtFailure =
-            failure is FeatureFailure ? failure.exception : WorkplaceExchangeTokenException(),
+        (failure) => caughtFailure = failure is FeatureFailure
+            ? failure.exception
+            : WorkplaceExchangeTokenException(),
         (success) {
           if (success is ExchangeWorkplaceTokenSuccess) {
             accessToken = success.accessToken;
@@ -115,11 +130,14 @@ class WorkplaceAccessModeRunner {
     // Mirrors AuthorizationInterceptors.validateToRetryTheRequestWithNewToken.
     final currentToken = _oidcTokenGetter();
     if (currentToken != null && currentToken != failedToken) {
-      return _exchangeAccessToken(platformUrl, currentToken, refreshAttempted: true);
+      return _exchangeAccessToken(
+        platformUrl,
+        currentToken,
+        refreshAttempted: true,
+      );
     }
 
     final refreshedToken = await _oidcRefreshTrigger();
-    // Trace level: rides into Sentry as a breadcrumb on _failWith.
     logTrace(
       'WorkplaceAccessModeRunner::_triggerRefreshOIDCToken',
       extras: {
@@ -131,7 +149,11 @@ class WorkplaceAccessModeRunner {
     // IdP may omit id_token on refresh; retrying then would just re-401.
     if (refreshedToken == null || refreshedToken == failedToken) throw failure;
 
-    return _exchangeAccessToken(platformUrl, refreshedToken, refreshAttempted: true);
+    return _exchangeAccessToken(
+      platformUrl,
+      refreshedToken,
+      refreshAttempted: true,
+    );
   }
 
   // RFC 8693 invalid_grant is 400; token_exchange has also answered 401.

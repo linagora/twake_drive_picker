@@ -1,41 +1,43 @@
-import 'package:meta/meta.dart';
-
 bool isValidDriveClient(String? client) =>
     client != null && client.trim().isNotEmpty && client != '*';
+
+/// `scheme://host[:port]` of an http(s) [url], or null when it has none.
+///
+/// [Uri.origin] throws for host-less or non-http(s) URLs (`data:`, `file:`,
+/// relative references); an intent URL like that can never be a Drive page.
+String? tryGetUriOrigin(Uri url) {
+  try {
+    return url.origin;
+  } on StateError {
+    return null;
+  }
+}
 
 /// Validates a postMessage/JS-channel origin against the resolved intent.
 abstract class DriveOriginValidator {
   const DriveOriginValidator();
 
-  /// Shared rule set; platform variants only override [matchesClient].
+  /// Strict equality with the intent origin. [intentClient] is kept for API
+  /// compatibility and is not trusted as an origin.
   bool isValid(
     String? origin, {
     required String intentOrigin,
     required String? intentClient,
   }) {
-    if (origin == null) return false;
-    if (origin == intentOrigin) return true;
-    if (matchesClient(origin, intentClient)) return true;
-    // Dev/fake intents (data: URI, no server-provided client) — the shim/
-    // postMessage sends '*' as targetOrigin in that case.
-    return intentOrigin == 'null' && origin == '*';
+    // Opaque and wildcard origins never identify the Drive page.
+    if (origin == null || origin == 'null' || origin == '*') return false;
+    return origin == intentOrigin;
   }
-
-  /// Extra origin match beyond [intentOrigin]. No-op on web.
-  @protected
-  bool matchesClient(String origin, String? intentClient) => false;
 }
 
-/// Web postMessage origins always equal the intent origin — no extra match.
+/// Web: `event.origin` is stamped by the browser and must equal the intent
+/// origin exactly. No wildcard, no opaque ('null') origin.
 class WebDriveOriginValidator extends DriveOriginValidator {
   const WebDriveOriginValidator();
 }
 
-/// Mobile JS channel additionally allows the intent's declared client id.
+/// Mobile: the origin is read natively from the WebView's current URL, never
+/// from what the page claims, and must equal the intent origin exactly.
 class MobileDriveOriginValidator extends DriveOriginValidator {
   const MobileDriveOriginValidator();
-
-  @override
-  bool matchesClient(String origin, String? intentClient) =>
-      isValidDriveClient(intentClient) && origin == intentClient;
 }

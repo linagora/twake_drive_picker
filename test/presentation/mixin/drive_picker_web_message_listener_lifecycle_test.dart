@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
 import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
-import 'package:twake_drive_picker/src/l10n/workplace_localizations.dart';
+import 'package:twake_drive_picker/src/l10n/drive_picker_localizations.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
-import 'package:twake_drive_picker/src/presentation/mixin/web_window_message_mixin.dart';
+import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
 import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
@@ -16,7 +16,7 @@ import 'package:twake_drive_picker/src/presentation/model/drive_picker_session.d
 
 // Exercises the real `window.postMessage` transport (other tests call
 // onMessage directly). Contract: the modal owns its listener for its own
-// lifetime and must not depend on the opener's — the context-menu tile pops
+// lifetime and must not depend on the opener's — a menu tile pops
 // its route on tap and disposes before the handshake arrives.
 //
 // universal_html gives the VM an in-memory DOM, so dispatchEvent reaches
@@ -48,8 +48,8 @@ void _driveIframePosts(String type, {String origin = _origin}) {
 }
 
 Widget _app(Widget home) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: DrivePickerLocalizations.localizationsDelegates,
+  supportedLocales: DrivePickerLocalizations.supportedLocales,
   home: home,
 );
 
@@ -274,12 +274,12 @@ void _modalOwnsListenerTests() {
 }
 
 // ---------------------------------------------------------------------------
-// Group C — end-to-end via the attachment context menu. This is the
+// Group C — end-to-end via a menu tile. This is the
 // regression: the tile pops its own route on tap, so if the modal ever leaned
 // on the tile's listener the handshake would be lost and the pick would fail.
 // ---------------------------------------------------------------------------
 
-/// Same shape as the real context-menu tile state: pops its own route in
+/// Same shape as a menu tile state: pops its own route in
 /// onTap, then opens the picker modal.
 class _MenuTileUnderTest extends StatefulWidget {
   const _MenuTileUnderTest();

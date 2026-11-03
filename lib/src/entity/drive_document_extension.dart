@@ -4,7 +4,7 @@ import 'package:twake_drive_picker/src/entity/drive_document.dart';
 extension DriveDocumentExtension on DriveDocument {
   Uri? get attachmentUrl => sharingLink ?? downloadLink;
 
-  /// The link a stager downloads from. Throws
+  /// The link to download the document from. Throws
   /// [DriveDownloadNullAttachmentException] when absent, and
   /// [DriveDownloadInsecureLinkException] for non-https in release mode
   /// (http stays allowed in dev for local backends).

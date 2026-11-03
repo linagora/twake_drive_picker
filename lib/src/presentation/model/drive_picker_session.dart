@@ -1,14 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_picker_state_mixin.dart';
 
-/// Bundles the inputs [DriveAttachmentPickerButton] and
-/// [DriveAttachmentContextMenuTile] both need to open the Drive picker, so
-/// callers thread one object instead of duplicating four constructor params.
+/// Bundles the inputs a widget using [DrivePickerStateMixin] needs to open the
+/// Drive picker, so callers thread one object instead of four parameters.
 class DrivePickerSession {
   final ValueGetter<bool> uploadFromUrlSupported;
   final num? Function() maxAttachmentSizeBytesGetter;
 
-  /// Bytes still attachable once what the composer already holds is deducted.
+  /// Bytes still attachable once what the host already holds is deducted.
   final num? Function() remainingAttachmentCapacityBytesGetter;
   final FetchDriveIntentCallback onFetchIntent;
 

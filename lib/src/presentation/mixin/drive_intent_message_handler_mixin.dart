@@ -16,7 +16,7 @@ typedef DriveIntentLoader = Future<WorkplaceIntent> Function();
 /// Shared loading/messaging lifecycle for the mobile and web Drive picker modals.
 mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
   late String _intentId;
-  String _intentOrigin = 'null';
+  String _intentOrigin = '';
   String? _intentClient;
   Timer? _readyTimeoutTimer;
 
@@ -62,8 +62,8 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Single Sentry funnel for every failure path: reports the failing stage
-  /// with the original exception and stack, then closes the modal.
+  /// Single funnel for every failure path: logs the failing stage with the
+  /// original exception and stack, then closes the modal.
   void _failWith(String stage, Object error, [StackTrace? stackTrace]) {
     workplaceLogger.error(
       'driveIntent: $stage',
@@ -100,10 +100,18 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
   void _tryApplyIntent() {
     if (!_canApplyIntent) return;
     final intent = _resolvedIntent!;
+    final origin = tryGetUriOrigin(intent.intentUrl);
+    if (origin == null) {
+      // data:, file: or host-less URLs have no origin to validate messages
+      // against; refuse them instead of accepting anything.
+      _failWith(
+        'intent url has no http(s) origin',
+        DriveIntentPageLoadException('intent url is not an http(s) url'),
+      );
+      return;
+    }
     _intentId = intent.intentId;
-    _intentOrigin = intent.intentUrl.scheme == 'data'
-        ? 'null'
-        : intent.intentUrl.origin;
+    _intentOrigin = origin;
     _intentClient = intent.client;
     _setPhase(_Phase.loadingPage);
     unawaited(_applyIntent(intent));
@@ -151,15 +159,18 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     if (!_acceptsMessages) return;
     if (!_isValidOrigin(origin)) {
       workplaceLogger.log(
-        'driveIntent: dropped message from unexpected origin: $origin',
+        'driveIntent: dropped message from unexpected origin',
       );
       return;
     }
     final WorkplaceIntentMessage msg;
     try {
       msg = WorkplaceIntentMessage.parse(_intentId, raw);
-    } catch (_) {
-      workplaceLogger.log('driveIntent: failed to parse message: $raw');
+    } catch (e) {
+      // Never log [raw]: it is page-controlled and may carry file metadata.
+      workplaceLogger.log(
+        'driveIntent: failed to parse message (${e.runtimeType})',
+      );
       return;
     }
     unawaited(_dispatchWorkplaceMessage(msg));
@@ -195,10 +206,12 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
         _setPhase(_Phase.interactive);
         break;
       case WorkplaceIntentDoneMessage():
+        // Counts only: ids, names and sizes are user data.
         workplaceLogger.log(
-          'driveIntent: done received, docs: ${msg.documents.map((d) => '{id:${d.id}, name:${d.name}, size:${d.size}, mimeType:${d.mimeType}').join(', ')}',
+          'driveIntent: done received, ${msg.documents.length} document(s) '
+          'accepted, ${msg.skippedCount} skipped',
         );
-        _finish(DrivePickOutcomePicked(msg.documents));
+        _finish(_outcomeOfDone(msg));
         break;
       case WorkplaceIntentErrorMessage():
         _failWith('drive page reported error', DriveIntentErrorException());
@@ -208,12 +221,19 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
         _finish(const DrivePickOutcomeCancelled());
         break;
       case WorkplaceIntentUnknownMessage():
-        workplaceLogger.log(
-          'driveIntent: unknown message type ${msg.type}, discarded',
-        );
+        workplaceLogger.log('driveIntent: unknown message type discarded');
         break;
     }
   }
+
+  DrivePickOutcome _outcomeOfDone(WorkplaceIntentDoneMessage msg) =>
+      drivePickOutcomeOfMessage(msg)!;
+
+  /// Whether finishing pops the enclosing route with the outcome (the dialog).
+  /// An embedded view reports through its callbacks instead and leaves the
+  /// route alone.
+  @protected
+  bool get popsRouteOnFinish => true;
 
   void cancel() => _finish(const DrivePickOutcomeCancelled());
 
@@ -253,7 +273,7 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     // Guarded like the hooks above: _finish runs from Timer/unawaited paths, so
     // a throwing pop must not escape as an uncaught async error.
     try {
-      if (mounted) Navigator.of(context).pop(outcome);
+      if (mounted && popsRouteOnFinish) Navigator.of(context).pop(outcome);
     } catch (e, s) {
       workplaceLogger.error(
         'driveIntent: pop failed',

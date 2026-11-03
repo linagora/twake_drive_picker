@@ -4,7 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:twake_drive_picker/src/data/datasource_impl/workplace_request_executor.dart';
-import 'package:twake_drive_picker/src/data/workplace_dio.dart';
+import 'package:twake_drive_picker/src/data/workplace_config.dart';
+import '../test_utils/test_workplace_config.dart';
 import 'package:twake_drive_picker/src/entity/workplace_access_mode.dart';
 
 /// Captures the last request and returns an empty JSON object.
@@ -32,42 +33,41 @@ class _CaptureAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  const executor = WorkplaceRequestExecutor();
-  late Dio originalDio;
+  final executor = WorkplaceRequestExecutor(config: testConfig);
   late _CaptureAdapter adapter;
 
   WorkplaceRequestContext bearer(String token) => WorkplaceRequestContext(
-        platformUrl: Uri.parse('https://platform.example.com/base?lang=fr'),
-        accessMode: BearerTokenAccessMode(token),
-      );
+    platformUrl: Uri.parse('https://platform.example.com/base?lang=fr'),
+    accessMode: BearerTokenAccessMode(token),
+  );
 
   setUp(() {
-    originalDio = WorkplaceDio.instance;
     adapter = _CaptureAdapter();
-    WorkplaceDio.setInstance(Dio()..httpClientAdapter = adapter);
+    testDio.httpClientAdapter = adapter;
   });
 
-  tearDown(() => WorkplaceDio.setInstance(originalDio));
-
   group('WorkplaceRequestExecutor::bearer::', () {
-    test('appends encoded segments after the platform path and merges query params', () async {
-      await executor.send(
-        context: bearer('tok'),
-        route: const WorkplaceRequestRoute(
-          method: 'POST',
-          pathSegments: ['files', 'io.cozy.apps/mail'],
-          queryParameters: {'Type': 'file'},
-        ),
-      );
+    test(
+      'appends encoded segments after the platform path and merges query params',
+      () async {
+        await executor.send(
+          context: bearer('tok'),
+          route: const WorkplaceRequestRoute(
+            method: 'POST',
+            pathSegments: ['files', 'io.cozy.apps/mail'],
+            queryParameters: {'Type': 'file'},
+          ),
+        );
 
-      final options = adapter.captured!;
-      expect(options.method, equals('POST'));
-      expect(options.uri.path, equals('/base/files/io.cozy.apps%2Fmail'));
-      expect(
-        options.uri.queryParameters,
-        equals({'lang': 'fr', 'Type': 'file', 'force_session_id': 'true'}),
-      );
-    });
+        final options = adapter.captured!;
+        expect(options.method, equals('POST'));
+        expect(options.uri.path, equals('/base/files/io.cozy.apps%2Fmail'));
+        expect(
+          options.uri.queryParameters,
+          equals({'lang': 'fr', 'Type': 'file', 'force_session_id': 'true'}),
+        );
+      },
+    );
 
     test('skips the empty segment of a trailing-slash platform URL', () async {
       await executor.send(
@@ -75,7 +75,10 @@ void main() {
           platformUrl: Uri.parse('https://platform.example.com/base/'),
           accessMode: const BearerTokenAccessMode('tok'),
         ),
-        route: const WorkplaceRequestRoute(method: 'GET', pathSegments: ['apps']),
+        route: const WorkplaceRequestRoute(
+          method: 'GET',
+          pathSegments: ['apps'],
+        ),
       );
 
       expect(adapter.captured!.uri.path, equals('/base/apps'));
@@ -84,8 +87,14 @@ void main() {
     test('sends the bearer token with the body headers and extra', () async {
       await executor.send(
         context: bearer('tok'),
-        route: const WorkplaceRequestRoute(method: 'GET', pathSegments: ['apps', 'drive']),
-        body: const WorkplaceRequestBody(headers: {'X-Test': '1'}, extra: {'k': 'v'}),
+        route: const WorkplaceRequestRoute(
+          method: 'GET',
+          pathSegments: ['apps', 'drive'],
+        ),
+        body: const WorkplaceRequestBody(
+          headers: {'X-Test': '1'},
+          extra: {'k': 'v'},
+        ),
       );
 
       final options = adapter.captured!;
@@ -102,7 +111,10 @@ void main() {
 
       await executor.send(
         context: bearer('tok'),
-        route: const WorkplaceRequestRoute(method: 'PUT', pathSegments: ['files']),
+        route: const WorkplaceRequestRoute(
+          method: 'PUT',
+          pathSegments: ['files'],
+        ),
         transfer: WorkplaceRequestTransfer(
           onSendProgress: progress,
           cancelToken: cancelToken,
@@ -117,16 +129,23 @@ void main() {
       expect(options.receiveTimeout, equals(timeout));
     });
 
-    test('keeps the WorkplaceDio timeouts when the transfer sets none', () async {
+    test('keeps the config Dio timeouts when the transfer sets none', () async {
       const defaultTimeout = Duration(seconds: 10);
-      WorkplaceDio.setInstance(
-        Dio(BaseOptions(sendTimeout: defaultTimeout, receiveTimeout: defaultTimeout))
-          ..httpClientAdapter = adapter,
-      );
+      final dio = Dio(
+        BaseOptions(
+          sendTimeout: defaultTimeout,
+          receiveTimeout: defaultTimeout,
+        ),
+      )..httpClientAdapter = adapter;
 
-      await executor.send(
+      await WorkplaceRequestExecutor(
+        config: WorkplaceConfig(dio: dio, requireHttps: false),
+      ).send(
         context: bearer('tok'),
-        route: const WorkplaceRequestRoute(method: 'GET', pathSegments: ['apps']),
+        route: const WorkplaceRequestRoute(
+          method: 'GET',
+          pathSegments: ['apps'],
+        ),
       );
 
       final options = adapter.captured!;
@@ -138,7 +157,10 @@ void main() {
       await expectLater(
         executor.send(
           context: bearer('  '),
-          route: const WorkplaceRequestRoute(method: 'GET', pathSegments: ['apps']),
+          route: const WorkplaceRequestRoute(
+            method: 'GET',
+            pathSegments: ['apps'],
+          ),
         ),
         throwsStateError,
       );

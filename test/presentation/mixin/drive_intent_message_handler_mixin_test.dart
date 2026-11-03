@@ -43,8 +43,9 @@ class _TestState extends State<_TestWidget>
   @override
   Future<void> loadIntent(WorkplaceIntent intent) {
     if (throwOnLoad) throw StateError('load intent failed');
-    if (failLoadAsync)
+    if (failLoadAsync) {
       return Future.error(StateError('load intent failed async'));
+    }
     loadCalls.add(intent);
     return Future.value();
   }
@@ -252,16 +253,26 @@ void _originFilterTests() {
     state.cancelReadyTimeoutForTesting();
   });
 
-  testWidgets('data: URI origin accepts * from mobile shim', (tester) async {
-    final state = await _buildAndApply(
-      tester,
-      intent: _intent(url: 'data:text/html,hi'),
-    );
+  testWidgets('wildcard origin is rejected for an https intent', (
+    tester,
+  ) async {
+    final state = await _buildAndApply(tester);
     state.onMessage(
       raw: _encode({'type': 'intent-$_intentId:ready'}),
       origin: '*',
     );
-    expect(state.ackCalls, hasLength(1));
+    expect(state.ackCalls, isEmpty);
+    state.cancelReadyTimeoutForTesting();
+  });
+
+  testWidgets('opaque "null" origin is rejected', (tester) async {
+    final state = await _buildAndApply(tester);
+    state.onMessage(
+      raw: _encode({'type': 'intent-$_intentId:ready'}),
+      origin: 'null',
+    );
+    expect(state.ackCalls, isEmpty);
+    state.cancelReadyTimeoutForTesting();
   });
 }
 

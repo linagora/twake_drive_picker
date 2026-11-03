@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_view_frame.dart';
 
 class DriveIntentWebViewModalShell extends StatelessWidget {
   final Widget child;
@@ -33,16 +33,6 @@ class DriveIntentWebViewModalShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final closeButton = iconButtonBuilder(
-      DriveIconButtonSpec(
-        icon: closeIconPath,
-        size: 40,
-        iconSize: 24,
-        iconColor: const Color(0xFF424244).withValues(alpha: 0.64),
-        hoverColor: const Color(0x14424244),
-        onTap: onClose,
-      ),
-    );
     return GestureDetector(
       onTap: onBarrierTap ?? onClose,
       behavior: HitTestBehavior.opaque,
@@ -56,17 +46,12 @@ class DriveIntentWebViewModalShell extends StatelessWidget {
         child: GestureDetector(
           onTap: () {},
           behavior: HitTestBehavior.opaque,
-          child: Stack(
-            children: [
-              KeyedSubtree(
-                key: const ValueKey('drive-shell-content'),
-                child: child,
-              ),
-              if (loadingWidget != null)
-                Positioned.fill(
-                  child: PointerInterceptor(child: loadingWidget!(closeButton)),
-                ),
-            ],
+          child: DriveIntentViewFrame(
+            onClose: onClose,
+            closeIconPath: closeIconPath,
+            iconButtonBuilder: iconButtonBuilder,
+            loadingWidget: loadingWidget,
+            child: child,
           ),
         ),
       ),

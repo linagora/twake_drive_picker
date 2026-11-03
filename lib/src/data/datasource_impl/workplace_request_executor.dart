@@ -2,11 +2,12 @@ import 'package:dio/dio.dart';
 
 import '../../entity/workplace_access_mode.dart';
 import '../../entity/workplace_request_context.dart';
-import '../bridge/cozy_bridge.dart';
+import '../../bridge/cozy_bridge_transport.dart';
+import '../../bridge/default_cozy_bridge_transport.dart' as default_transport;
 import '../../model/workplace_request_body.dart';
 import '../../model/workplace_request_route.dart';
 import '../../model/workplace_request_transfer.dart';
-import '../workplace_dio.dart';
+import '../workplace_config.dart';
 
 export '../../entity/workplace_request_context.dart';
 export '../../model/workplace_request_body.dart';
@@ -15,7 +16,25 @@ export '../../model/workplace_request_transfer.dart';
 
 /// Sends one cozy-stack request over whichever access mode was resolved.
 class WorkplaceRequestExecutor {
-  const WorkplaceRequestExecutor();
+  /// [config] carries the Dio used for bearer requests; [bridge] the cozy
+  /// external bridge used for bridge requests. Both default to the app's own.
+  ///
+  /// [platform] is the former name of [bridge], kept so existing callers
+  /// passing a `DrivePickerPlatform` keep compiling; [bridge] wins when both
+  /// are given.
+  WorkplaceRequestExecutor({
+    WorkplaceConfig? config,
+    CozyBridgeTransport? bridge,
+    @Deprecated('Use bridge. A DrivePickerPlatform is a CozyBridgeTransport.')
+    CozyBridgeTransport? platform,
+  }) : _config = config ?? WorkplaceConfig(),
+       _bridge =
+           bridge ??
+           platform ??
+           default_transport.createDefaultCozyBridgeTransport();
+
+  final WorkplaceConfig _config;
+  final CozyBridgeTransport _bridge;
 
   Future<dynamic> send({
     required WorkplaceRequestContext context,
@@ -25,14 +44,19 @@ class WorkplaceRequestExecutor {
   }) async {
     return switch (context.accessMode) {
       // The bridge resolves once: no extra, no progress, no cancellation.
-      BridgeAccessMode() => CozyBridge.fetchJson(
-          method: route.method,
-          path: _bridgePath(route),
-          body: body.data,
-          headers: body.headers.isEmpty ? null : body.headers,
-        ),
+      BridgeAccessMode() => _bridge.fetchJson(
+        method: route.method,
+        path: _bridgePath(route),
+        body: body.data,
+        headers: body.headers.isEmpty ? null : body.headers,
+      ),
       BearerTokenAccessMode(:final accessToken) => _sendWithBearerToken(
-          context.platformUrl, accessToken, route, body, transfer),
+        context.platformUrl,
+        accessToken,
+        route,
+        body,
+        transfer,
+      ),
     };
   }
 
@@ -41,8 +65,10 @@ class WorkplaceRequestExecutor {
     final path = '/${route.pathSegments.map(Uri.encodeComponent).join('/')}';
     if (route.queryParameters.isEmpty) return path;
     final query = route.queryParameters.entries
-        .map((entry) =>
-            '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}')
+        .map(
+          (entry) =>
+              '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}',
+        )
         .join('&');
     return '$path?$query';
   }
@@ -58,19 +84,21 @@ class WorkplaceRequestExecutor {
     if (accessToken.trim().isEmpty) {
       throw StateError('Access token is empty');
     }
-    final url = platformUrl.replace(
-      pathSegments: [
-        ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
-        ...route.pathSegments,
-      ],
-      queryParameters: {
-        ...platformUrl.queryParameters,
-        ...route.queryParameters,
-        // Required for cozy-stack to accept a bearer-only (no session) request.
-        'force_session_id': 'true',
-      },
-    ).toString();
-    final response = await WorkplaceDio.instance.request(
+    final url = platformUrl
+        .replace(
+          pathSegments: [
+            ...platformUrl.pathSegments.where((segment) => segment.isNotEmpty),
+            ...route.pathSegments,
+          ],
+          queryParameters: {
+            ...platformUrl.queryParameters,
+            ...route.queryParameters,
+            // Required for cozy-stack to accept a bearer-only (no session) request.
+            'force_session_id': 'true',
+          },
+        )
+        .toString();
+    final response = await _config.dio.request(
       url,
       options: Options(
         method: route.method,
