@@ -50,6 +50,11 @@ abstract class DrivePickerPlatform extends CozyBridgeTransport {
   /// Builds the dialog-free view: same page and protocol as [buildModal], but
   /// it fills its parent and reports through [onResult] / [onClose] instead of
   /// popping a route. [imageAssets] may be null (spinner instead of skeleton).
+  ///
+  /// Not abstract, so a platform written before this member existed keeps
+  /// compiling: by default it throws an [UnsupportedError]. The built-in
+  /// mobile and web platforms override it. A custom platform that wants to
+  /// support `DriveIntentWebView` overrides it too.
   Widget buildView({
     required DriveIntentLoader intentLoader,
     required WorkplaceFilePickerConfigRequest filePickerConfig,
@@ -58,5 +63,9 @@ abstract class DrivePickerPlatform extends CozyBridgeTransport {
     required WorkplaceLogger logger,
     ValueChanged<DrivePickOutcome>? onResult,
     VoidCallback? onClose,
-  });
+  }) => throw UnsupportedError(
+    '$runtimeType does not implement buildView, so DriveIntentWebView is not '
+    'available on it. Override DrivePickerPlatform.buildView, or use '
+    'DriveIntentWebViewModal (buildModal) instead.',
+  );
 }
