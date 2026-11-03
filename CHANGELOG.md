@@ -48,8 +48,10 @@ First release under the name `twake_drive_picker` (it was
   request, so the JSON sent is unchanged for existing callers. They need Twake
   Drive 1.108.0 or later; `allowFolder` is legacy in Drive (ignored when
   `accept` is set).
-- Headless usage example (`example/lib/headless_example.dart`) and README
-  sections for the three usage modes.
+- Headless usage example (`example/lib/headless_example.dart`).
+- Architecture decision records in `docs/adr/` (core / UI split; integrating
+  the picker: the three usage modes and the picker options). The README is a
+  short overview that links to them.
 - A test that locks the export surface of `twake_drive_picker.dart`.
 
 - `DrivePickerPlatform` with `MobileDrivePickerPlatform`
