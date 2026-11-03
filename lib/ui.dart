@@ -16,5 +16,6 @@ export 'src/presentation/model/drive_intent_image_assets.dart';
 export 'src/presentation/model/drive_pick_state.dart';
 export 'src/presentation/model/drive_picker_session.dart';
 export 'src/presentation/view/drive_intent_skeleton_loader.dart';
+export 'src/presentation/view/drive_intent_web_view.dart';
 export 'src/presentation/view/drive_intent_web_view_modal.dart';
 export 'src/presentation/view/drive_intent_web_view_modal_shell.dart';

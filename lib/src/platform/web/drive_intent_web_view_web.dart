@@ -10,34 +10,49 @@ import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dar
 import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_assets.dart';
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_plain_loader.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_view_frame.dart';
+import 'package:twake_drive_picker/src/presentation/view/deliver_drive_intent_outcome.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
-class WebDriveIntentWebViewModal extends StatefulWidget {
+class WebDriveIntentWebView extends StatefulWidget {
   final DriveIntentLoader intentLoader;
   final WorkplaceFilePickerConfigRequest filePickerConfig;
-  final DriveIntentImageAssets imageAssets;
+  final DriveIntentImageAssets? imageAssets;
   final DriveIconButtonBuilder iconButtonBuilder;
   final WorkplaceLogger logger;
 
-  const WebDriveIntentWebViewModal({
+  /// True: no dialog, no barrier and no route pop, the outcome goes to
+  /// [onResult] and [onClose]. False: the dialog of the modal, which pops it.
+  final bool embedded;
+  final ValueChanged<DrivePickOutcome>? onResult;
+  final VoidCallback? onClose;
+
+  const WebDriveIntentWebView({
     super.key,
     required this.intentLoader,
     required this.filePickerConfig,
     required this.imageAssets,
     this.iconButtonBuilder = defaultDriveIconButtonBuilder,
     this.logger = const NoopWorkplaceLogger(),
-  });
+    this.embedded = false,
+    this.onResult,
+    this.onClose,
+  }) : assert(
+         embedded || imageAssets != null,
+         'The dialog needs imageAssets; only the embedded view can go without.',
+       );
 
   @override
-  State<WebDriveIntentWebViewModal> createState() =>
-      _WebDriveIntentWebViewModalState();
+  State<WebDriveIntentWebView> createState() => _WebDriveIntentWebViewState();
 }
 
-class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
+class _WebDriveIntentWebViewState extends State<WebDriveIntentWebView>
     with
         DriveIntentMessageHandlerMixin,
-        WebWindowMessageMixin<WebDriveIntentWebViewModal> {
+        WebWindowMessageMixin<WebDriveIntentWebView> {
   html.IFrameElement? _iframeElement;
 
   @override
@@ -53,19 +68,42 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
   }
 
   Widget _loadingWidget({required bool wideScreen, Widget? closeButton}) {
+    final assets = widget.imageAssets;
+    if (assets == null) return DriveIntentPlainLoader(closeButton: closeButton);
     if (wideScreen) {
       return DriveIntentSkeletonLoader.table(
-        imageAssets: widget.imageAssets,
+        imageAssets: assets,
         iconButtonBuilder: widget.iconButtonBuilder,
         closeButton: closeButton,
       );
     }
     return DriveIntentSkeletonLoader.list(
-      imageAssets: widget.imageAssets,
+      imageAssets: assets,
       iconButtonBuilder: widget.iconButtonBuilder,
       closeButton: closeButton,
     );
   }
+
+  @override
+  bool get popsRouteOnFinish => !widget.embedded;
+
+  @override
+  void onFinished(DrivePickOutcome outcome) => deliverDriveIntentOutcome(
+    outcome,
+    onResult: widget.onResult,
+    onClose: widget.onClose,
+  );
+
+  HtmlIframeWidget _iframe() => HtmlIframeWidget(
+    key: const ValueKey('drive-intent-webview'),
+    borderRadius: 6,
+    onIframeCreated: (iframe) {
+      final viewRecreated =
+          _iframeElement != null && !identical(_iframeElement, iframe);
+      _iframeElement = iframe;
+      notifyPlatformViewReady(viewRecreated: viewRecreated);
+    },
+  );
 
   @override
   void initState() {
@@ -108,6 +146,24 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      // The parent decides the size, so the skeleton follows the space it is
+      // given rather than the window.
+      return DriveIntentViewFrame(
+        closeIconPath: widget.imageAssets?.closeIcon,
+        iconButtonBuilder: widget.iconButtonBuilder,
+        onClose: cancel,
+        loadingWidget: showSkeleton
+            ? (closeButton) => LayoutBuilder(
+                builder: (_, constraints) => _loadingWidget(
+                  wideScreen: constraints.maxWidth >= _wideScreenMinWidth,
+                  closeButton: closeButton,
+                ),
+              )
+            : null,
+        child: _iframe(),
+      );
+    }
     final isWideScreen = wideScreen(context);
     final shell = DriveIntentWebViewModalShell(
       insetPadding: isWideScreen ? const EdgeInsets.all(24) : EdgeInsets.zero,
@@ -120,7 +176,7 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
             )
           : const RoundedRectangleBorder(),
       alignment: isWideScreen ? Alignment.center : null,
-      closeIconPath: widget.imageAssets.closeIcon,
+      closeIconPath: widget.imageAssets!.closeIcon,
       iconButtonBuilder: widget.iconButtonBuilder,
       onClose: cancel,
       onBarrierTap: () {
@@ -132,16 +188,7 @@ class _WebDriveIntentWebViewModalState extends State<WebDriveIntentWebViewModal>
               closeButton: closeButton,
             )
           : null,
-      child: HtmlIframeWidget(
-        key: const ValueKey('drive-intent-webview'),
-        borderRadius: 6,
-        onIframeCreated: (iframe) {
-          final viewRecreated =
-              _iframeElement != null && !identical(_iframeElement, iframe);
-          _iframeElement = iframe;
-          notifyPlatformViewReady(viewRecreated: viewRecreated);
-        },
-      ),
+      child: _iframe(),
     );
     // Keep the iframe ancestry stable across resize: remounting it reloads Drive.
     return Stack(

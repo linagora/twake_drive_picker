@@ -7,7 +7,11 @@ import 'package:twake_drive_picker/src/presentation/model/drive_intent_image_ass
 import 'package:twake_drive_picker/src/picker/drive_origin_validator.dart';
 import 'package:twake_drive_picker/src/platform/mobile/mobile_message_gate.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_skeleton_loader.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_plain_loader.dart';
+import 'package:twake_drive_picker/src/presentation/view/drive_intent_view_frame.dart';
+import 'package:twake_drive_picker/src/presentation/view/deliver_drive_intent_outcome.dart';
 import 'package:twake_drive_picker/src/presentation/view/drive_intent_web_view_modal_shell.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:flutter/material.dart';
 import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -16,29 +20,40 @@ import 'package:twake_drive_picker/src/entity/workplace_intent.dart';
 import 'package:twake_drive_picker/src/domain/exceptions/workplace_exceptions.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
 
-class MobileDriveIntentWebViewModal extends StatefulWidget {
+class MobileDriveIntentWebView extends StatefulWidget {
   final DriveIntentLoader intentLoader;
   final WorkplaceFilePickerConfigRequest filePickerConfig;
-  final DriveIntentImageAssets imageAssets;
+  final DriveIntentImageAssets? imageAssets;
   final DriveIconButtonBuilder iconButtonBuilder;
   final WorkplaceLogger logger;
 
-  const MobileDriveIntentWebViewModal({
+  /// True: no dialog and no route pop, the outcome goes to [onResult] and
+  /// [onClose]. False: the dialog of the modal, which pops the outcome.
+  final bool embedded;
+  final ValueChanged<DrivePickOutcome>? onResult;
+  final VoidCallback? onClose;
+
+  const MobileDriveIntentWebView({
     super.key,
     required this.intentLoader,
     required this.filePickerConfig,
     required this.imageAssets,
     this.iconButtonBuilder = defaultDriveIconButtonBuilder,
     this.logger = const NoopWorkplaceLogger(),
-  });
+    this.embedded = false,
+    this.onResult,
+    this.onClose,
+  }) : assert(
+         embedded || imageAssets != null,
+         'The dialog needs imageAssets; only the embedded view can go without.',
+       );
 
   @override
-  State<MobileDriveIntentWebViewModal> createState() =>
-      _MobileDriveIntentWebViewModalState();
+  State<MobileDriveIntentWebView> createState() =>
+      _MobileDriveIntentWebViewState();
 }
 
-class _MobileDriveIntentWebViewModalState
-    extends State<MobileDriveIntentWebViewModal>
+class _MobileDriveIntentWebViewState extends State<MobileDriveIntentWebView>
     with DriveIntentMessageHandlerMixin {
   @override
   WorkplaceLogger get workplaceLogger => widget.logger;
@@ -110,7 +125,63 @@ class _MobileDriveIntentWebViewModalState
   }
 
   @override
+  bool get popsRouteOnFinish => !widget.embedded;
+
+  @override
+  void onFinished(DrivePickOutcome outcome) => deliverDriveIntentOutcome(
+    outcome,
+    onResult: widget.onResult,
+    onClose: widget.onClose,
+  );
+
+  Widget _loading(Widget closeButton) {
+    final assets = widget.imageAssets;
+    if (assets == null) return DriveIntentPlainLoader(closeButton: closeButton);
+    return DriveIntentSkeletonLoader.list(
+      imageAssets: assets,
+      iconButtonBuilder: widget.iconButtonBuilder,
+      closeButton: closeButton,
+    );
+  }
+
+  Widget _webView() => InAppWebView(
+    key: const ValueKey('drive-intent-webview'),
+    initialSettings: InAppWebViewSettings(useShouldOverrideUrlLoading: true),
+    initialUserScripts: UnmodifiableListView([
+      UserScript(
+        source: DriveIntentShims.parentPostMessageShim,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        forMainFrameOnly: true,
+      ),
+    ]),
+    onWebViewCreated: (controller) {
+      _webViewController = controller;
+      final gate = MobileMessageGate(
+        currentUrl: () async => (await controller.getUrl())?.uriValue,
+        onMessage: onMessage,
+      );
+      controller.addJavaScriptHandler(
+        handlerName: DriveIntentShims.handlerName,
+        callback: gate.handle,
+      );
+      notifyPlatformViewReady();
+    },
+    shouldOverrideUrlLoading: _handleNavigation,
+    onReceivedError: _handleLoadError,
+    onReceivedHttpError: _handleHttpError,
+  );
+
+  @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return DriveIntentViewFrame(
+        closeIconPath: widget.imageAssets?.closeIcon,
+        iconButtonBuilder: widget.iconButtonBuilder,
+        onClose: cancel,
+        loadingWidget: showSkeleton ? _loading : null,
+        child: _webView(),
+      );
+    }
     return SafeArea(
       top: true,
       left: false,
@@ -120,47 +191,14 @@ class _MobileDriveIntentWebViewModalState
         insetPadding: EdgeInsets.zero,
         constraints: const BoxConstraints.expand(),
         shape: const RoundedRectangleBorder(),
-        closeIconPath: widget.imageAssets.closeIcon,
+        closeIconPath: widget.imageAssets!.closeIcon,
         iconButtonBuilder: widget.iconButtonBuilder,
         onClose: cancel,
         onBarrierTap: () {
           if (!showSkeleton) cancel();
         },
-        loadingWidget: showSkeleton
-            ? (closeButton) => DriveIntentSkeletonLoader.list(
-                imageAssets: widget.imageAssets,
-                iconButtonBuilder: widget.iconButtonBuilder,
-                closeButton: closeButton,
-              )
-            : null,
-        child: InAppWebView(
-          key: const ValueKey('drive-intent-webview'),
-          initialSettings: InAppWebViewSettings(
-            useShouldOverrideUrlLoading: true,
-          ),
-          initialUserScripts: UnmodifiableListView([
-            UserScript(
-              source: DriveIntentShims.parentPostMessageShim,
-              injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-              forMainFrameOnly: true,
-            ),
-          ]),
-          onWebViewCreated: (controller) {
-            _webViewController = controller;
-            final gate = MobileMessageGate(
-              currentUrl: () async => (await controller.getUrl())?.uriValue,
-              onMessage: onMessage,
-            );
-            controller.addJavaScriptHandler(
-              handlerName: DriveIntentShims.handlerName,
-              callback: gate.handle,
-            );
-            notifyPlatformViewReady();
-          },
-          shouldOverrideUrlLoading: _handleNavigation,
-          onReceivedError: _handleLoadError,
-          onReceivedHttpError: _handleHttpError,
-        ),
+        loadingWidget: showSkeleton ? _loading : null,
+        child: _webView(),
       ),
     );
   }

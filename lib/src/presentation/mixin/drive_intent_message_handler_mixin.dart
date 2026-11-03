@@ -234,6 +234,12 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     return DrivePickOutcomeFailed(DriveIntentNoValidDocumentException());
   }
 
+  /// Whether finishing pops the enclosing route with the outcome (the dialog).
+  /// An embedded view reports through its callbacks instead and leaves the
+  /// route alone.
+  @protected
+  bool get popsRouteOnFinish => true;
+
   void cancel() => _finish(const DrivePickOutcomeCancelled());
 
   @override
@@ -272,7 +278,7 @@ mixin DriveIntentMessageHandlerMixin<T extends StatefulWidget> on State<T> {
     // Guarded like the hooks above: _finish runs from Timer/unawaited paths, so
     // a throwing pop must not escape as an uncaught async error.
     try {
-      if (mounted) Navigator.of(context).pop(outcome);
+      if (mounted && popsRouteOnFinish) Navigator.of(context).pop(outcome);
     } catch (e, s) {
       workplaceLogger.error(
         'driveIntent: pop failed',

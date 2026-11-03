@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:twake_drive_picker/src/bridge/cozy_bridge_transport.dart';
 import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:twake_drive_picker/src/platform/default_platform.dart'
     as default_platform;
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
@@ -44,5 +45,18 @@ abstract class DrivePickerPlatform extends CozyBridgeTransport {
     required DriveIntentImageAssets imageAssets,
     required DriveIconButtonBuilder iconButtonBuilder,
     required WorkplaceLogger logger,
+  });
+
+  /// Builds the dialog-free view: same page and protocol as [buildModal], but
+  /// it fills its parent and reports through [onResult] / [onClose] instead of
+  /// popping a route. [imageAssets] may be null (spinner instead of skeleton).
+  Widget buildView({
+    required DriveIntentLoader intentLoader,
+    required WorkplaceFilePickerConfigRequest filePickerConfig,
+    required DriveIntentImageAssets? imageAssets,
+    required DriveIconButtonBuilder iconButtonBuilder,
+    required WorkplaceLogger logger,
+    ValueChanged<DrivePickOutcome>? onResult,
+    VoidCallback? onClose,
   });
 }

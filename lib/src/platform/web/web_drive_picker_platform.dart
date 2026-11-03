@@ -1,9 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:twake_drive_picker/src/logging/workplace_logger.dart';
 import 'package:twake_drive_picker/src/model/workplace_intent_request.dart';
+import 'package:twake_drive_picker/src/picker/drive_pick_outcome.dart';
 import 'package:twake_drive_picker/src/platform/drive_picker_platform.dart';
 import 'package:twake_drive_picker/src/platform/web/cozy_bridge_web.dart';
-import 'package:twake_drive_picker/src/platform/web/drive_intent_web_view_modal_web.dart';
+import 'package:twake_drive_picker/src/platform/web/drive_intent_web_view_web.dart';
 import 'package:twake_drive_picker/src/platform/web/web_window_message_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/mixin/drive_intent_message_handler_mixin.dart';
 import 'package:twake_drive_picker/src/presentation/model/drive_icon_button.dart';
@@ -46,11 +47,31 @@ class WebDrivePickerPlatform extends DrivePickerPlatform {
     required DriveIntentImageAssets imageAssets,
     required DriveIconButtonBuilder iconButtonBuilder,
     required WorkplaceLogger logger,
-  }) => WebDriveIntentWebViewModal(
+  }) => WebDriveIntentWebView(
     intentLoader: intentLoader,
     filePickerConfig: filePickerConfig,
     imageAssets: imageAssets,
     iconButtonBuilder: iconButtonBuilder,
     logger: logger,
+  );
+
+  @override
+  Widget buildView({
+    required DriveIntentLoader intentLoader,
+    required WorkplaceFilePickerConfigRequest filePickerConfig,
+    required DriveIntentImageAssets? imageAssets,
+    required DriveIconButtonBuilder iconButtonBuilder,
+    required WorkplaceLogger logger,
+    ValueChanged<DrivePickOutcome>? onResult,
+    VoidCallback? onClose,
+  }) => WebDriveIntentWebView(
+    intentLoader: intentLoader,
+    filePickerConfig: filePickerConfig,
+    imageAssets: imageAssets,
+    iconButtonBuilder: iconButtonBuilder,
+    logger: logger,
+    embedded: true,
+    onResult: onResult,
+    onClose: onClose,
   );
 }
