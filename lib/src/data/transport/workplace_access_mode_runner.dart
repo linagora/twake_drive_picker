@@ -18,16 +18,22 @@ typedef OidcRefreshTrigger = Future<String?> Function();
 /// Runs one Workplace call over bridge or bearer token, resolved once so
 /// every request the call sends shares it: one exchange, plus one retry after an OIDC refresh.
 class WorkplaceAccessModeRunner {
+  /// [bridge] defaults to the app's own cozy bridge transport. [platform] is
+  /// its former name, kept so existing callers passing a `DrivePickerPlatform`
+  /// keep compiling; [bridge] wins when both are given.
   WorkplaceAccessModeRunner({
     required ExchangeDriveTokenInteractor exchangeTokenInteractor,
     required String? Function() oidcTokenGetter,
     required OidcRefreshTrigger oidcRefreshTrigger,
     CozyBridgeTransport? bridge,
     bool Function()? isBridgeAvailable,
+    @Deprecated('Use bridge. A DrivePickerPlatform is a CozyBridgeTransport.')
+    CozyBridgeTransport? platform,
   }) : _exchangeTokenInteractor = exchangeTokenInteractor,
        _oidcTokenGetter = oidcTokenGetter,
        _oidcRefreshTrigger = oidcRefreshTrigger,
-       _isBridgeAvailable = isBridgeAvailable ?? _bridgeAvailable(bridge);
+       _isBridgeAvailable =
+           isBridgeAvailable ?? _bridgeAvailable(bridge ?? platform);
 
   final ExchangeDriveTokenInteractor _exchangeTokenInteractor;
   final String? Function() _oidcTokenGetter;

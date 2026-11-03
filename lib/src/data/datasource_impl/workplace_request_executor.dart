@@ -18,11 +18,20 @@ export '../../model/workplace_request_transfer.dart';
 class WorkplaceRequestExecutor {
   /// [config] carries the Dio used for bearer requests; [bridge] the cozy
   /// external bridge used for bridge requests. Both default to the app's own.
+  ///
+  /// [platform] is the former name of [bridge], kept so existing callers
+  /// passing a `DrivePickerPlatform` keep compiling; [bridge] wins when both
+  /// are given.
   WorkplaceRequestExecutor({
     WorkplaceConfig? config,
     CozyBridgeTransport? bridge,
+    @Deprecated('Use bridge. A DrivePickerPlatform is a CozyBridgeTransport.')
+    CozyBridgeTransport? platform,
   }) : _config = config ?? WorkplaceConfig(),
-       _bridge = bridge ?? default_transport.createDefaultCozyBridgeTransport();
+       _bridge =
+           bridge ??
+           platform ??
+           default_transport.createDefaultCozyBridgeTransport();
 
   final WorkplaceConfig _config;
   final CozyBridgeTransport _bridge;
