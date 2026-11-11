@@ -11,5 +11,15 @@ build/
 *.iml
 .vscode/
 
-# Local tooling
+# Local tooling (AI agents)
 .claude/
+.codex/
+.cursor/
+.agents/
+.gemini/
+.windsurf/
+.aider*
+.okf
+CLAUDE.md
+AGENTS.md
+GEMINI.md

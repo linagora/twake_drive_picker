@@ -12,7 +12,7 @@ Twake Chat (mobile) and Twake Mail (web and mobile). It derives from the
 dependencies:
   twake_drive_picker:
     git:
-      url: https://github.com/nqhhdev/twake_drive_picker.git
+      url: https://github.com/linagora/twake_drive_picker.git
       ref: v0.2.0
 ```
 
