@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- The repository moved to https://github.com/linagora/twake_drive_picker.
+- A token exchange answering that the Chat app is not installed is no longer
+  retried with a refreshed OIDC token: the answer is final.
+
 ## 0.2.0
 
 First release under the name `twake_drive_picker` (it was

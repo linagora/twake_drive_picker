@@ -231,6 +231,34 @@ void main() {
     }
 
     test(
+      'does not refresh when token_exchange answers the Chat app is not installed',
+      () async {
+        final notInstalled = DioException(
+          requestOptions: RequestOptions(path: '/auth/token_exchange'),
+          response: Response(
+            statusCode: 400,
+            data: {'error': 'Chat app is not installed'},
+            requestOptions: RequestOptions(path: '/auth/token_exchange'),
+          ),
+          type: DioExceptionType.badResponse,
+        );
+        final repository = _FakeWorkplaceRepository([notInstalled]);
+        final refresh = countingTrigger('refreshed-oidc-token');
+        final runner = makeRunner(
+          repository: repository,
+          oidcRefreshTrigger: refresh.trigger,
+        );
+
+        await expectLater(
+          runner.run(platformUrl, bearerEchoCall()),
+          throwsA(same(notInstalled)),
+        );
+        expect(refresh.callCount(), equals(0));
+        expect(repository.exchangedIdTokens, equals(['oidc-token']));
+      },
+    );
+
+    test(
       'does not retry twice when the refreshed token also gets a 401',
       () async {
         final repository = _FakeWorkplaceRepository([

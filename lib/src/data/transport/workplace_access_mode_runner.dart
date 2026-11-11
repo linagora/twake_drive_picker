@@ -157,9 +157,15 @@ class WorkplaceAccessModeRunner {
   }
 
   // RFC 8693 invalid_grant is 400; token_exchange has also answered 401.
+  // A 400 saying the Chat app is not installed is final: a fresh token gets
+  // the same answer, so it is not retried.
   bool _isStaleSubjectToken(Object failure) {
     if (failure is! DioException) return false;
     final statusCode = failure.response?.statusCode;
+    if (statusCode == 400 && _isAppNotInstalled(failure)) return false;
     return statusCode == 400 || statusCode == 401;
   }
+
+  bool _isAppNotInstalled(DioException failure) =>
+      '${failure.response?.data}'.toLowerCase().contains('not installed');
 }
